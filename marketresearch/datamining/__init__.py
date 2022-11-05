@@ -4,5 +4,5 @@ Project: marketresearch
 Author: Ryan Cardenas
 Creation Date: 11/5/2022
 
-Put docstring here.
+A package containing modules for mining data from various sources.
 """
