@@ -6,3 +6,5 @@ secrets.*
 /marketresearch.egg-info/
 /marketresearch.toml
 /marketresearch/clients/secrets.py
+*.idea/
+**__pycache__
