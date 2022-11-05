@@ -174,4 +174,6 @@ dependencies:
   - zeromq=4.3.4=hd77b12b_0
   - zlib=1.2.13=h8cc25b3_0
   - zstd=1.5.2=h19a0ad4_0
+  - pip:
+    - metatrader5==5.0.43
 prefix: C:\Users\Ryan\anaconda3\envs\marketresearch
