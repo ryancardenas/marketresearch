@@ -3,3 +3,4 @@
 *.joblib
 /marketresearch.egg-info/
 /marketresearch.toml
+/marketresearch/data/secrets.py
