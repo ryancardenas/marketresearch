@@ -258,10 +258,12 @@ def get_orders(start_date="01-01-2020", end_date="today"):
 
 
 if __name__ == "__main__":
+    from marketresearch.utils import PROJECT_ROOT_DIRECTORY
+
     tries = 0
     pytest_retries = 3
-    rtdir = "G:\\repos\\obsolete\\obsolete\\fx_data\\data\\"
-    trg = rtdir + "fx_data.hdf5"
+    rtdir = PROJECT_ROOT_DIRECTORY / "marketresearch\\data\\"
+    trg = rtdir / "fx_data.hdf5"
     symbols = ["EURUSD", "USDJPY", "USDCAD", "GBPUSD", "NZDUSD", "AUDUSD", "USDCHF"]
 
     with open("fx_data_mining.log", "a") as f:
