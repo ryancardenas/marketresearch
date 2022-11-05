@@ -10,10 +10,11 @@ Script for setup of marketresearch.
 
 from distutils.core import setup
 
-setup(name='marketresearch',
-      version='0.1',
-      description='Market Research Tools',
-      author='Ryan Cardenas',
-      url='https://github.com/ryancardenas/marketresearch',
-      packages=['marketresearch'],
-      )
+setup(
+    name="marketresearch",
+    version="0.1",
+    description="Market Research Tools",
+    author="Ryan Cardenas",
+    url="https://github.com/ryancardenas/marketresearch",
+    packages=["marketresearch"],
+)
