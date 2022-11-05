@@ -23,14 +23,14 @@ from marketresearch.data.secrets import MT5_ACCT_INFO
 
 ACCT_INFO = MT5_ACCT_INFO
 AVAILABLE_FREQUENCIES = {
-        "M1": mt5.TIMEFRAME_M1,
-        "M5": mt5.TIMEFRAME_M5,
-        "H1": mt5.TIMEFRAME_H1,
-        "H4": mt5.TIMEFRAME_H4,
-        "Daily": mt5.TIMEFRAME_D1,
-        "Weekly": mt5.TIMEFRAME_W1,
-        "Monthly": mt5.TIMEFRAME_MN1,
-    }
+    "M1": mt5.TIMEFRAME_M1,
+    "M5": mt5.TIMEFRAME_M5,
+    "H1": mt5.TIMEFRAME_H1,
+    "H4": mt5.TIMEFRAME_H4,
+    "Daily": mt5.TIMEFRAME_D1,
+    "Weekly": mt5.TIMEFRAME_W1,
+    "Monthly": mt5.TIMEFRAME_MN1,
+}
 
 
 def read_csv_to_dataframe(fn):
@@ -47,12 +47,12 @@ def read_csv_to_dataframe(fn):
             "low": float,
             "close": float,
             "tickvol": np.int64,
-            "volume": int
+            "volume": int,
         },
-        parse_dates=['date']
+        parse_dates=["date"],
     )
-    df['timestamp'] = df['date'].view("int64")
-    df.set_index('date', inplace=True)
+    df["timestamp"] = df["date"].view("int64")
+    df.set_index("date", inplace=True)
     os.unlink(fn)
     return df
 
@@ -66,7 +66,14 @@ def create_timeframe_group(symbol_group, tf, df):
             dset.resize(x.shape[0], axis=0)
             dset[:] = x
         else:
-            dset = grp.create_dataset(name, data=x, shape=x.shape, dtype=x.dtype, maxshape=(None,), compression="gzip")
+            dset = grp.create_dataset(
+                name,
+                data=x,
+                shape=x.shape,
+                dtype=x.dtype,
+                maxshape=(None,),
+                compression="gzip",
+            )
 
 
 def read_datasets_to_dataframe(timeframe_group):
@@ -74,8 +81,8 @@ def read_datasets_to_dataframe(timeframe_group):
     for name in ["timestamp", "open", "high", "low", "close", "tickvol"]:
         data[name] = timeframe_group[name][:]
     df2 = pd.DataFrame(data)
-    df2['date'] = pd.to_datetime(df2['timestamp']).values
-    df2.set_index('date', inplace=True)
+    df2["date"] = pd.to_datetime(df2["timestamp"]).values
+    df2.set_index("date", inplace=True)
     return df2
 
 
@@ -109,16 +116,18 @@ def retrieve_data_from_mt5_server(sym, tf_obj, nbars=50000, num_retries=5):
                 tries += 1
                 time.sleep(retry_wait_seconds)
         else:
-            print(f"Connection not established. Retrying in {retry_wait_seconds} seconds...")
+            print(
+                f"Connection not established. Retrying in {retry_wait_seconds} seconds..."
+            )
             tries += 1
             time.sleep(retry_wait_seconds)
 
     if tries > num_retries:
         raise ConnectionError("Could not connect to MT5 terminal.")
 
-    df['date'] = pd.to_datetime(df['time'], unit='s')
-    df['timestamp'] = df['date'].view('int64')
-    df.set_index('date', inplace=True)
+    df["date"] = pd.to_datetime(df["time"], unit="s")
+    df["timestamp"] = df["date"].view("int64")
+    df.set_index("date", inplace=True)
     df.rename(columns={"tick_volume": "tickvol"}, inplace=True)
     df = df[["timestamp", "open", "high", "low", "close", "tickvol"]]
 
@@ -139,7 +148,7 @@ def update_hdf5(f, symbol, tf, df):
 
 def archive_data_from_csv(srcdir, trg):
     flist = glob.glob(str(srcdir) + "/**/*.csv", recursive=True)
-    with h5py.File(trg, 'a') as f:
+    with h5py.File(trg, "a") as f:
         for fn in flist:
             fbase = os.path.basename(fn)
             symbol = fbase[:6]
@@ -151,14 +160,18 @@ def archive_data_from_csv(srcdir, trg):
 
 
 def archive_data_from_mt5(trg, symbols, frequencies="all", nbars=50000):
-    if frequencies == 'all':
+    if frequencies == "all":
         timeframes = AVAILABLE_FREQUENCIES
     elif isinstance(frequencies, list):
-        timeframes = {key: val for key, val in AVAILABLE_FREQUENCIES.items() if key in frequencies}
+        timeframes = {
+            key: val for key, val in AVAILABLE_FREQUENCIES.items() if key in frequencies
+        }
     else:
-        raise ValueError("Argument 'frequencies' must be either 'all' or a list of strings.")
+        raise ValueError(
+            "Argument 'frequencies' must be either 'all' or a list of strings."
+        )
 
-    with h5py.File(trg, 'a') as f:
+    with h5py.File(trg, "a") as f:
         for symbol in symbols:
             for tf, tf_obj in timeframes.items():
                 print(f"\nRetrieving {symbol}.{tf} data...")
@@ -182,7 +195,7 @@ def get_deals(start_date="01-01-2020", end_date="today"):
         vals = {
             "ticket_id": deal.ticket,
             "order": deal.order,
-            "time": pd.to_datetime(deal.time, unit='s'),
+            "time": pd.to_datetime(deal.time, unit="s"),
             "type": fxde.ENUM_DEAL_TYPE(deal.type).name,
             "entry": fxde.ENUM_DEAL_ENTRY(deal.entry).name,
             "position_id": deal.position_id,
@@ -201,8 +214,8 @@ def get_deals(start_date="01-01-2020", end_date="today"):
         data.append(vals)
 
     df = pd.DataFrame(data)
-    deals = df[df['position_id'] != 0]
-    deals.set_index(['position_id', 'ticket_id'], inplace=True)
+    deals = df[df["position_id"] != 0]
+    deals.set_index(["position_id", "ticket_id"], inplace=True)
     return deals
 
 
@@ -216,8 +229,8 @@ def get_orders(start_date="01-01-2020", end_date="today"):
     for order in orders:
         vals = {
             "ticket_id": order.ticket,
-            "time_setup": pd.to_datetime(order.time_setup, unit='s'),
-            "time_done": pd.to_datetime(order.time_done, unit='s'),
+            "time_setup": pd.to_datetime(order.time_setup, unit="s"),
+            "time_done": pd.to_datetime(order.time_done, unit="s"),
             "order_type": fxde.ENUM_ORDER_TYPE(order.type).name,
             "time_type": fxde.ENUM_ORDER_TYPE_TIME(order.type_time).name,
             "fill_type": fxde.ENUM_ORDER_TYPE_FILLING(order.type_filling).name,
@@ -239,19 +252,19 @@ def get_orders(start_date="01-01-2020", end_date="today"):
         data.append(vals)
 
     df = pd.DataFrame(data)
-    orders = df[df['position_id'] != 0]
-    orders.set_index(['position_id', 'ticket_id'], inplace=True)
+    orders = df[df["position_id"] != 0]
+    orders.set_index(["position_id", "ticket_id"], inplace=True)
     return orders
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     tries = 0
     pytest_retries = 3
     rtdir = "G:\\repos\\obsolete\\obsolete\\fx_data\\data\\"
     trg = rtdir + "fx_data.hdf5"
     symbols = ["EURUSD", "USDJPY", "USDCAD", "GBPUSD", "NZDUSD", "AUDUSD", "USDCHF"]
 
-    with open("fx_data_mining.log", 'a') as f:
+    with open("fx_data_mining.log", "a") as f:
         now = pd.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
         f.write(f"\n{now} -- Running pytests...\n")
         exit_code = pytest.main()
@@ -270,7 +283,7 @@ if __name__=="__main__":
                 f.write(f"{now} -- Testing returned exit code: {exit_code}\n")
 
         if tries > pytest_retries:
-                f.write(f"{now} -- Pytest failed. Aborting.\n")
+            f.write(f"{now} -- Pytest failed. Aborting.\n")
         else:
             now = pd.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
             f.write(f"{now} -- Storing data...\n")
@@ -280,4 +293,6 @@ if __name__=="__main__":
             if successful_run:
                 f.write(f"{now} -- Data successfully stored!\n")
             else:
-                f.write(f"{now} -- ERROR: Process failed to run fx_data.archive_data_from_mt5()\n")
+                f.write(
+                    f"{now} -- ERROR: Process failed to run fx_data.archive_data_from_mt5()\n"
+                )
