@@ -1,6 +1,7 @@
 *.hdf5
 *.ipynb
 *.joblib
+*.log
 /marketresearch.egg-info/
 /marketresearch.toml
 /marketresearch/data/secrets.py
