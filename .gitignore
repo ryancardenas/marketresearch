@@ -5,4 +5,4 @@
 secrets.*
 /marketresearch.egg-info/
 /marketresearch.toml
-/marketresearch/data/secrets.py
+/marketresearch/clients/secrets.py

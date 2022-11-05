@@ -19,7 +19,7 @@ import numpy as np
 import pandas as pd
 
 import marketresearch.clients.mt5.data_enums as fxde
-from marketresearch.data.secrets import MT5_ACCT_INFO
+from marketresearch.clients.secrets import MT5_ACCT_INFO
 
 ACCT_INFO = MT5_ACCT_INFO
 AVAILABLE_FREQUENCIES = {
