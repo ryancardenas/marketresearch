@@ -26,6 +26,7 @@ class ENUM_ORDER_TYPE(enum.Enum):
     StopLimit price
     ORDER_TYPE_CLOSE_BY - Order to close a position by an opposite one
     """
+
     BUY = 0
     SELL = 1
     BUY_LIMIT = 2
@@ -50,6 +51,7 @@ class ENUM_ORDER_STATE(enum.Enum):
     ORDER_STATE_REQUEST_MODIFY - Order is being modified (changing its parameters)
     ORDER_STATE_REQUEST_CANCEL - Order is being deleted (deleting from the trading system)
     """
+
     STARTED = 0
     PLACED = 1
     CANCELED = 2
@@ -76,6 +78,7 @@ class ENUM_ORDER_TYPE_FILLING(enum.Enum):
         Return orders are not allowed in the Market Execution mode (market execution —
         SYMBOL_TRADE_EXECUTION_MARKET).
     """
+
     FILL_OR_KILL = 0
     IMMEDIATE_OR_CANCEL = 1
     RETURN = 2
@@ -88,7 +91,8 @@ class ENUM_ORDER_TYPE_TIME(enum.Enum):
     SPECIFIED - Good till expired order
     SPECIFIED_DAY - The order will be effective till 23:59:59 of the specified day. If this time is outside a
         trading session, the order expires in the nearest trading time.
-     """
+    """
+
     GTC = 0
     DAY = 1
     SPECIFIED = 2
@@ -105,6 +109,7 @@ class ENUM_ORDER_REASON(enum.Enum):
     ORDER_REASON_TP - The order was placed as a result of Take Profit activation
     ORDER_REASON_SO - The order was placed as a result of the Stop Out event
     """
+
     CLIENT = 0
     MOBILE = 1
     WEB = 2
@@ -141,6 +146,7 @@ class ENUM_DEAL_TYPE(enum.Enum):
     DEAL_DIVIDEND_FRANKED - Franked (non-taxable) dividend operations
     DEAL_TAX - Tax charges
     """
+
     BUY = 0
     SELL = 1
     BALANCE = 2
@@ -168,6 +174,7 @@ class ENUM_DEAL_ENTRY(enum.Enum):
     DEAL_ENTRY_INOUT - Reverse
     DEAL_ENTRY_OUT_BY - Close a position by an opposite one
     """
+
     IN = 0
     OUT = 1
     INOUT = 2
@@ -189,6 +196,7 @@ class ENUM_DEAL_REASON(enum.Enum):
     DEAL_REASON_SPLIT - The deal was executed after the split (price reduction) of an instrument, which had an open
         position during split announcement
     """
+
     CLIENT = 0
     MOBILE = 1
     WEB = 2
