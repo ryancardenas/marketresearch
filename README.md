@@ -20,52 +20,56 @@ elsewhere on your machine.
 ## Use Cases
 ### Data Mining
 ```mermaid
-%%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': ''}}}%%
+%%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': 'transparent'}}}%%
 graph LR
     subgraph Mining[Data Mining]
         direction LR
-        MiningAgent(Agent) -- \ndata request --> MiningClient(Client)
-        MiningClient -- response packet\n\n --> MiningAgent
-        MiningAgent -- \n\nvalid response packet --> MiningDataView(DataView)
-        MiningDataView -- \nprocessed data --> MiningDatabase[(Database)]
+        MiningAgent(Agent) -- <br>data request --> MiningClient(Client)
+        MiningClient -- response packet<br><br> --> MiningAgent
+        MiningAgent -- <br><br>valid response packet --> MiningDataView(DataView)
+        MiningDataView -- <br>processed data --> MiningDatabase[(Database)]
     end
+    style Mining color:#ffffde
 ```
 
 ### Backtesting
 ```mermaid
-%%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': ''}}}%%
-graph LR
-    subgraph Backtesting[Backtesting]
-        direction RL
-        BacktestingAgent(Agent) -- \nempty response packet --> BacktestingDataView(DataView)
-        BacktestingDataView(DataView) -- processed data\n\n --> BacktestingAgent
-        BacktestingDatabase[(Database)] -. \naccess .-> BacktestingDataView
+%%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': 'transparent'}}}%%
+graph RL
+    subgraph Backtesting
+    direction RL
+        BacktestingAgent(Agent) -- <br>empty response packet --> BacktestingDataView(DataView)
+        BacktestingDataView(DataView) -- processed data<br><br> --> BacktestingAgent
+        BacktestingDatabase[(Database)] -. <br>access .-> BacktestingDataView
     end
+    style Backtesting color:#ffffde
 ```
 
 ### Simulation
 ```mermaid
-%%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': ''}}}%%
-graph LR
-    subgraph Simulation[Simulation]
-        direction RL
-        SimulationAgent(Agent) -- \n\ndata request\ntrade order --> SimulationClient(Client)
-        SimulationClient -- response packet\n\n --> SimulationDataView(DataView)
-        SimulationDataView -- processed data\n\n --> SimulationAgent
-        SimulationClient -- data request\ntrade order\n\n --> SimulationMarket(Market)
+%%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': 'transparent'}}}%%
+graph RL
+    subgraph Simulation
+    direction RL
+        SimulationAgent(Agent) -- <br><br><br>data request<br>trade order --> SimulationClient(Client)
+        SimulationClient -- response packet<br><br><br> --> SimulationDataView(DataView)
+        SimulationDataView -- processed data<br><br><br> --> SimulationAgent
+        SimulationClient -- data request<br>trade order<br><br> --> SimulationMarket(Market)
         SimulationMarket -- price action data --> SimulationClient
     end
+    style Simulation color:#ffffde
 ```
 
 ### Algorithmic Trading
 ```mermaid
-%%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': ''}}}%%
+%%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': 'transparent'}}}%%
 graph LR
-    subgraph AlgoTrading[Algo Trading]
-        direction LR
-        AlgoTradingAgent(Agent) -- \ndata request\ntrade order --> AlgoTradingClient(Client)
-        AlgoTradingClient -- response packet\n\n --> AlgoTradingAgent
-        AlgoTradingAgent -- valid response packet\n\n --> AlgoTradingDataView(DataView)
-        AlgoTradingDataView -- processed data --> AlgoTradingAgent
+    subgraph AlgoTrading
+    direction LR
+        AlgoTradingAgent(Agent) -- <br><br>data request<br>trade order --> AlgoTradingClient(Client)
+        AlgoTradingClient -- response packet<br><br> --> AlgoTradingAgent
+        AlgoTradingAgent -- valid response packet<br><br> --> AlgoTradingDataView(DataView)
+        AlgoTradingDataView -- <br>processed data --> AlgoTradingAgent
     end
+    style AlgoTrading color:#ffffde
 ```
