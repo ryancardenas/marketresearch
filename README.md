@@ -18,6 +18,7 @@ put credentials for online services. Alternatively, you can use this file as an 
 elsewhere on your machine.
 
 ## Use Cases
+### Data Mining
 ```mermaid
 %%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': ''}}}%%
 graph LR
@@ -25,17 +26,27 @@ graph LR
         direction LR
         MiningAgent(Agent) -- \ndata request --> MiningClient(Client)
         MiningClient -- response packet\n\n --> MiningAgent
-        MiningAgent --\nvalid response packet --> MiningDataView(DataView)
+        MiningAgent -- \n\nvalid response packet --> MiningDataView(DataView)
         MiningDataView -- \nprocessed data --> MiningDatabase[(Database)]
     end
+```
 
+### Backtesting
+```mermaid
+%%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': ''}}}%%
+graph LR
     subgraph Backtesting[Backtesting]
         direction RL
-        BacktestingAgent(Agent) -- \nstep forward request --> BacktestingDataView(DataView)
+        BacktestingAgent(Agent) -- \nempty response packet --> BacktestingDataView(DataView)
         BacktestingDataView(DataView) -- processed data\n\n --> BacktestingAgent
         BacktestingDatabase[(Database)] -. \naccess .-> BacktestingDataView
     end
+```
 
+### Simulation
+```mermaid
+%%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': ''}}}%%
+graph LR
     subgraph Simulation[Simulation]
         direction RL
         SimulationAgent(Agent) -- \n\ndata request\ntrade order --> SimulationClient(Client)
@@ -43,5 +54,18 @@ graph LR
         SimulationDataView -- processed data\n\n --> SimulationAgent
         SimulationClient -- data request\ntrade order\n\n --> SimulationMarket(Market)
         SimulationMarket -- price action data --> SimulationClient
+    end
+```
+
+### Algorithmic Trading
+```mermaid
+%%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': ''}}}%%
+graph LR
+    subgraph AlgoTrading[Algo Trading]
+        direction LR
+        AlgoTradingAgent(Agent) -- \ndata request\ntrade order --> AlgoTradingClient(Client)
+        AlgoTradingClient -- response packet\n\n --> AlgoTradingAgent
+        AlgoTradingAgent -- valid response packet\n\n --> AlgoTradingDataView(DataView)
+        AlgoTradingDataView -- processed data --> AlgoTradingAgent
     end
 ```
