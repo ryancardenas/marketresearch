@@ -55,7 +55,7 @@ graph RL
         SimulationClient -- response packet<br><br><br> --> SimulationDataView(DataView)
         SimulationDataView -- processed data<br><br><br> --> SimulationAgent
         SimulationClient -- data request<br>trade order<br><br> --> SimulationMarket(Market)
-        SimulationMarket -- price action data --> SimulationClient
+        SimulationMarket -- <br>price action data<br>trade receipts --> SimulationClient
     end
     style Simulation color:#ffffde
 ```
