@@ -278,7 +278,7 @@ if __name__ == "__main__":
 
     tries = 0
     pytest_retries = 3
-    rtdir = PROJECT_ROOT_DIRECTORY / "marketresearch\\data\\"
+    rtdir = PROJECT_ROOT_DIRECTORY / "marketresearch\\databases\\"
     trg = rtdir / "fx_data.hdf5"
     symbols = ["EURUSD", "USDJPY", "USDCAD", "GBPUSD", "NZDUSD", "AUDUSD", "USDCHF"]
 
