@@ -17,29 +17,31 @@ modules are currently included:
 put credentials for online services. Alternatively, you can use this file as an interface to your credentials stored 
 elsewhere on your machine.
 
-## Diagrams
+## Use Cases
+```mermaid
 %%{init: {'theme': 'default', 'themeVariables': { 'titleColor': '#0000FF', 'edgeLabelBackground': ''}}}%%
 graph LR
-subgraph Mining[Data Mining]
-direction LR
-MiningAgent(Agent) -- \ndata request --> MiningClient(Client)
-MiningClient -- response packet\n\n --> MiningAgent
-MiningAgent --\nvalid response packet --> MiningDataView(DataView)
-MiningDataView -- \nprocessed data --> MiningDatabase[(Database)]
-end
+    subgraph Mining[Data Mining]
+        direction LR
+        MiningAgent(Agent) -- \ndata request --> MiningClient(Client)
+        MiningClient -- response packet\n\n --> MiningAgent
+        MiningAgent --\nvalid response packet --> MiningDataView(DataView)
+        MiningDataView -- \nprocessed data --> MiningDatabase[(Database)]
+    end
 
-subgraph Backtesting[Backtesting]
-direction RL
-BacktestingAgent(Agent) -- \nstep forward request --> BacktestingDataView(DataView)
-BacktestingDataView(DataView) -- processed data\n\n --> BacktestingAgent
-BacktestingDatabase[(Database)] -. \naccess .-> BacktestingDataView
-end
+    subgraph Backtesting[Backtesting]
+        direction RL
+        BacktestingAgent(Agent) -- \nstep forward request --> BacktestingDataView(DataView)
+        BacktestingDataView(DataView) -- processed data\n\n --> BacktestingAgent
+        BacktestingDatabase[(Database)] -. \naccess .-> BacktestingDataView
+    end
 
-subgraph Simulation[Simulation]
-direction RL
-SimulationAgent(Agent) -- \n\ndata request\ntrade order --> SimulationClient(Client)
-SimulationClient -- response packet\n\n --> SimulationDataView(DataView)
-SimulationDataView -- processed data\n\n --> SimulationAgent
-SimulationClient -- data request\ntrade order\n\n --> SimulationMarket(Market)
-SimulationMarket -- price action data --> SimulationClient
-end
+    subgraph Simulation[Simulation]
+        direction RL
+        SimulationAgent(Agent) -- \n\ndata request\ntrade order --> SimulationClient(Client)
+        SimulationClient -- response packet\n\n --> SimulationDataView(DataView)
+        SimulationDataView -- processed data\n\n --> SimulationAgent
+        SimulationClient -- data request\ntrade order\n\n --> SimulationMarket(Market)
+        SimulationMarket -- price action data --> SimulationClient
+    end
+```
