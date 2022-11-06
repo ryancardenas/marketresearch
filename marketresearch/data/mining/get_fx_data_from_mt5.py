@@ -5,7 +5,23 @@ Project: marketresearch
 Author: Ryan Cardenas
 Creation Date: 11/5/2022
 
-Put docstring here.
+This code downloads candlestick data from MetaTrader5 and stores the data to disk in an HDF5 file. The general structure
+for the stored data is:
+
+HDF5_FILE/
+    FX_PAIR_1/
+        TIMEFRAME_1/
+            DATE
+            OPEN
+            HIGH
+            LOW
+            CLOSE
+            TICKVOLUME
+            VOLUME
+        TIMEFRAME_2/...
+    FX_PAIR_2/
+        TIMEFRAME_1/...
+    FX_PAIR_3/...
 """
 
 import glob
