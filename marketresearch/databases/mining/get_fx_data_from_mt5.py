@@ -22,6 +22,8 @@ HDF5_FILE/
     FX_PAIR_2/
         TIMEFRAME_1/...
     FX_PAIR_3/...
+
+ToDo: Refactor functions into Agent/Client/DataView/Database structure defined in README.md.
 """
 
 import glob
