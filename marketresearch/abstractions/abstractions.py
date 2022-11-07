@@ -11,7 +11,7 @@ Contains abstract classes for marketresearch project.
 from abc import ABC, abstractmethod
 
 
-class Agent(ABC):
+class AbstractAgent(ABC):
     """Abstract class representing the entity that makes decisions based on DataView and issues commands to a trading
     platform Client. Specifically, the Agent can send trade orders, request market data, and request account
     information through the Client. The Agent may be a simulated human being, an automated (closed loop) trading
@@ -37,7 +37,7 @@ class Agent(ABC):
         pass
 
 
-class Client(ABC):
+class AbstractClient(ABC):
     """Abstract class representing the software wrapper that handles trade orders, data requests, and account
     information requests through API calls. When used in simulations, the Client can interface with a Market model to
     execute orders, request market data, receive price action data, and receive trade receipts. When used in a trading
@@ -65,7 +65,7 @@ class Client(ABC):
         pass
 
 
-class Market(ABC):
+class AbstractMarket(ABC):
     """Abstract class representing the entity that receives trade orders issued through the Client on behalf of an
     Agent, simulates price action, and generates trade receipts."""
 
@@ -82,7 +82,7 @@ class Market(ABC):
         pass
 
 
-class DataView(ABC):
+class AbstractDataView(ABC):
     """Abstract class representing the handler that receives data packets and processes data, providing an interface
     for viewing the processed data. When used in simulation, each DataView receives market data directly from a
     Client. When used in backtesting, the DataView accesses market data stored in a database on disk or in the cloud.
