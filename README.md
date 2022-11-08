@@ -81,6 +81,7 @@ classDiagram
         +feeds: list~string~
         -feeds: dict~string:AbstractDataFeed~
         +update(): None
+        +add_feed(): None
         -__getitem__(): None
     }
 
@@ -105,6 +106,7 @@ classDiagram
         +close: array~float~ 
         +volume: array~int~
         +datetime: array~datetime64~
+        -data_source: AbstractDataSource
         +update(): None
         -connect_data_source(): None
         -__getitem__(): None
@@ -112,6 +114,13 @@ classDiagram
 
     class AbstractIndicator{
         +name: string
+        +update(): None
+    }
+
+    class AbstractDataBase{
+        +name: string
+        +connect(): None
+        +serve(): None
         +update(): None
     }
 
@@ -157,6 +166,8 @@ classDiagram
     AbstractDataView <|-- BacktestDataView
     AbstractDataView o-- AbstractDataFeed
     AbstractDataFeed <|-- AbstractInstrument
+    AbstractDataFeed ..> AbstractDataBase
+    AbstractDataBase <.. AbstractTimeframe
     AbstractInstrument *-- AbstractTimeframe
     AbstractTimeframe *-- AbstractIndicator
     AbstractInstrument <|-- OptionInstrument
