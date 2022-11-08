@@ -88,7 +88,9 @@ classDiagram
     class AbstractDataFeed{
         +name: string
         +data_type: type
+        -data_source: AbstractDataBase
         +update(): None
+        -connect_data_source(): None
     }
     
     class AbstractInstrument{
@@ -106,7 +108,7 @@ classDiagram
         +close: array~float~ 
         +volume: array~int~
         +datetime: array~datetime64~
-        -data_source: AbstractDataSource
+        -data_source: AbstractDataBase
         +update(): None
         -connect_data_source(): None
         -__getitem__(): None
