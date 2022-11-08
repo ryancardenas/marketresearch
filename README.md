@@ -96,7 +96,7 @@ classDiagram
     class AbstractInstrument{
         +timeframes: list~string~
         -timeframes: dict~string:AbstractTimeframe~
-        -initialize_timeframe_views(): None
+        +add_timeframe(): None
         -__getitem__(): None
     }
 
@@ -109,15 +109,18 @@ classDiagram
         +volume: array~int~
         +datetime: array~datetime64~
         +indicators: list~string~
+        -parent: AbstractInstrument
         -indicators: dict~string:AbstractIndicator~
         -data_source: AbstractDataBase
         +update(): None
+        +add_indicator(): None
         -connect_to_database(): None
         -__getitem__(): None
     }
 
     class AbstractIndicator{
         +name: string
+        -parent: AbstractTimeframe
         +update(): None
     }
 

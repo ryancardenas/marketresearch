@@ -7,6 +7,7 @@ Creation Date: 11/5/2022
 
 Contains abstract classes for marketresearch project.
 """
+from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from typing import List, Union
@@ -39,15 +40,31 @@ class AbstractDataBase(ABC):
         pass
 
 
+class AbstractIndicator(ABC):
+    """Abstract class representing a function that processes Timeframe data for a single Symbol and returns a value
+    or array of values."""
+
+    def __init__(self, name: str, parent: AbstractTimeframe):
+        self.name = name
+        self._parent = parent
+
+    @abstractmethod
+    def update(self):
+        """Updates the Indicator, either by assimilating new market data or by incrementing the time step used for
+        accessing data from a DataBase."""
+        pass
+
+
 class AbstractTimeframe(ABC):
     """Abstract class representing the wrapper for data that is typically charted for a financial instrument. A
     Timeframe stores OHLC, timestamps, volume, and other data for a specific Instrument for a single aggregation
     period -- 1 Month, 1 Week, 1 Day, 1 Hour, 1 Min, etc. An Instrument may have many different Timeframes,
     but no more than one for each unique aggregation period."""
 
-    def __init__(self, name: str, data_source: AbstractDataBase):
+    def __init__(self, name: str, data_source: AbstractDataBase, parent: AbstractInstrument):
         self.name = name
         self._data_source = data_source
+        self._parent = parent
         self._indicators = {}
 
     @property
@@ -89,6 +106,12 @@ class AbstractTimeframe(ABC):
     def update(self):
         """Updates the Timeframe, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
+        pass
+
+    @abstractmethod
+    def add_indicator(self, timeframes: Union[AbstractIndicator, List[AbstractIndicator]]):
+        """Creates Indicator objects with their respective data sources and links them to this object, provided they
+        don't already exist and are not duplicates of each other."""
         pass
 
     @abstractmethod
@@ -160,7 +183,7 @@ class AbstractInstrument(AbstractDataFeed):
         pass
 
     @abstractmethod
-    def initialize_timeframe_views(self, timeframes: List[AbstractTimeframe]):
+    def add_timeframe(self, timeframes: Union[AbstractTimeframe, List[AbstractTimeframe]]):
         """Creates Timeframe objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
         pass
