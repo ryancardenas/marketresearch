@@ -108,6 +108,8 @@ classDiagram
         +close: array~float~ 
         +volume: array~int~
         +datetime: array~datetime64~
+        +indicators: list~string~
+        -indicators: dict~string:AbstractIndicator~
         -data_source: AbstractDataBase
         +update(): None
         -connect_to_database(): None
@@ -180,5 +182,6 @@ classDiagram
     OptionInstrument <|-- IndexOptionInstrument
     AbstractTimeframe <|-- FxTimeframe
     AbstractTimeframe <|-- StandardTimeframe
+
 
 ```
