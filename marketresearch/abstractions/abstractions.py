@@ -61,7 +61,9 @@ class AbstractTimeframe(ABC):
     period -- 1 Month, 1 Week, 1 Day, 1 Hour, 1 Min, etc. An Instrument may have many different Timeframes,
     but no more than one for each unique aggregation period."""
 
-    def __init__(self, name: str, data_source: AbstractDataBase, parent: AbstractInstrument):
+    def __init__(
+        self, name: str, data_source: AbstractDataBase, parent: AbstractInstrument
+    ):
         self.name = name
         self._data_source = data_source
         self._parent = parent
@@ -109,7 +111,9 @@ class AbstractTimeframe(ABC):
         pass
 
     @abstractmethod
-    def add_indicator(self, timeframes: Union[AbstractIndicator, List[AbstractIndicator]]):
+    def add_indicator(
+        self, timeframes: Union[AbstractIndicator, List[AbstractIndicator]]
+    ):
         """Creates Indicator objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
         pass
@@ -183,7 +187,9 @@ class AbstractInstrument(AbstractDataFeed):
         pass
 
     @abstractmethod
-    def add_timeframe(self, timeframes: Union[AbstractTimeframe, List[AbstractTimeframe]]):
+    def add_timeframe(
+        self, timeframes: Union[AbstractTimeframe, List[AbstractTimeframe]]
+    ):
         """Creates Timeframe objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
         pass
