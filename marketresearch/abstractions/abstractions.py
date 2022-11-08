@@ -9,6 +9,173 @@ Contains abstract classes for marketresearch project.
 """
 
 from abc import ABC, abstractmethod
+from typing import List, Union
+
+
+class AbstractDataBase(ABC):
+    """Abstract class representing the interface between a source of data and a DataFeed or TimeFrame. A DataBase may
+    source data from a file on disk, a specific server, the internet at large, or another program."""
+
+    def __init__(self, name: str):
+        self.name = name
+
+    @abstractmethod
+    def connect(self):
+        """Establishes a connection between this interface and the data source. For a file, this may mean loading
+        data into memory (or for an HDF5 file, simply loading pointers into memory). For a server, this may mean
+        establishing a remote connection. For the internet at large, this may mean opening a browser. For a program,
+        this may mean calling the external code."""
+        pass
+
+    @abstractmethod
+    def serve(self):
+        """Provides data to the requesting party (typically a DataFeed or TimeFrame)."""
+        pass
+
+    @abstractmethod
+    def update(self):
+        """Updates the DataBase, either by assimilating new market data or by incrementing the time step used for
+        accessing data from a source."""
+        pass
+
+
+class AbstractTimeframe(ABC):
+    """Abstract class representing the wrapper for data that is typically charted for a financial instrument. A
+    Timeframe stores OHLC, timestamps, volume, and other data for a specific Instrument for a single aggregation
+    period -- 1 Month, 1 Week, 1 Day, 1 Hour, 1 Min, etc. An Instrument may have many different Timeframes,
+    but no more than one for each unique aggregation period."""
+
+    def __init__(self, name: str, data_source: AbstractDataBase):
+        self.name = name
+        self._data_source = data_source
+        self._indicators = {}
+
+    @property
+    def indicators(self):
+        """Returns a list of the names of each Indicator belonging to this object."""
+        return list(self._indicators.keys())
+
+    @property
+    @abstractmethod
+    def open(self):
+        pass
+
+    @property
+    @abstractmethod
+    def high(self):
+        pass
+
+    @property
+    @abstractmethod
+    def low(self):
+        pass
+
+    @property
+    @abstractmethod
+    def close(self):
+        pass
+
+    @property
+    @abstractmethod
+    def volume(self):
+        pass
+
+    @property
+    @abstractmethod
+    def datetime(self):
+        pass
+
+    @abstractmethod
+    def update(self):
+        """Updates the Timeframe, either by assimilating new market data or by incrementing the time step used for
+        accessing data from a DataBase."""
+        pass
+
+    @abstractmethod
+    def connect_to_database(self):
+        """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
+        pass
+
+    def __getitem__(self, item: str):
+        """Allows the Indicator objects to be accessed by 'MyTimeframe[indicator_name]' notation."""
+        if isinstance(item, str):
+            if item not in self.timeframes:
+                raise KeyError(f"{item} not found")
+            else:
+                return self._timeframes[item]
+        else:
+            raise KeyError(
+                f"key must be a string representing the name of a linked Timeframe"
+            )
+
+
+class AbstractDataFeed(ABC):
+    """Abstract class representing a data object that can be interacted with via a DataView. A DataFeed can be a
+    financial instrument, news, account statistics, trade logs, or any other type of information that might be viewed
+    through a DataView."""
+
+    def __init__(self, name: str, data_source: AbstractDataBase):
+        self.name = name
+        self._data_source = data_source
+
+    @property
+    def dtype(self):
+        """Retrieves the data type for this object."""
+        return self.__class__
+
+    @abstractmethod
+    def update(self):
+        """Updates the Instrument, either by assimilating new market data or by incrementing the time step used for
+        accessing data from a DataBase."""
+        pass
+
+    @abstractmethod
+    def connect_to_database(self):
+        """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
+        pass
+
+
+class AbstractInstrument(AbstractDataFeed):
+    """Abstract class representing a financial instrument data feed. This data feed can be an FX pair,
+    futures contract, stock, option, or any other type of financial instrument."""
+
+    def __init__(self, name: str, data_source: AbstractDataBase):
+        super().__init__(name=name, data_source=data_source)
+        self._timeframes = {}
+
+    @property
+    def timeframes(self):
+        """Returns a list of the names of each Timeframe belonging to this object."""
+        return list(self._timeframes.keys())
+
+    @abstractmethod
+    def update(self):
+        """Updates the Instrument, either by assimilating new market data or by incrementing the time step used for
+        accessing data from a DataBase."""
+        pass
+
+    @abstractmethod
+    def connect_to_database(self):
+        """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
+        pass
+
+    @abstractmethod
+    def initialize_timeframe_views(self, timeframes: List[AbstractTimeframe]):
+        """Creates Timeframe objects with their respective data sources and links them to this object, provided they
+        don't already exist and are not duplicates of each other."""
+        pass
+
+    def __getitem__(self, item: str):
+        """Allows the Timeframe objects to be accessed by 'MyInstrument[timeframe_name]' notation."""
+        if isinstance(item, str):
+            if item not in self.timeframes:
+                raise KeyError(f"{item} not found")
+            else:
+                return self._timeframes[item]
+        else:
+            raise KeyError(
+                f"key must be a string representing the name of a linked Timeframe"
+            )
 
 
 class AbstractAgent(ABC):
@@ -17,7 +184,6 @@ class AbstractAgent(ABC):
     information through the Client. The Agent may be a simulated human being, an automated (closed loop) trading
     algorithm, a manual (open-loop) trading algorithm, a backtesting algorithm, or a data mining algorithm."""
 
-    @abstractmethod
     def __init__(self):
         pass
 
@@ -44,7 +210,6 @@ class AbstractClient(ABC):
     algorithm, the Market layer is hidden from the Agent such that order execution and price action appear to occur
     inside the Client."""
 
-    @abstractmethod
     def __init__(self):
         pass
 
@@ -69,16 +234,17 @@ class AbstractMarket(ABC):
     """Abstract class representing the entity that receives trade orders issued through the Client on behalf of an
     Agent, simulates price action, and generates trade receipts."""
 
-    @abstractmethod
     def __init__(self):
         pass
 
     @abstractmethod
     def simulate_price_action(self):
+        """Simulates price action."""
         pass
 
     @abstractmethod
     def generate_trade_receipt(self):
+        """Generates trade receipts."""
         pass
 
 
@@ -90,12 +256,33 @@ class AbstractDataView(ABC):
     market data to a DataView or request that a backtesting DataView step forward in time, an Agent or Client must call
     the DataView's update() method."""
 
-    @abstractmethod
     def __init__(self):
-        pass
+        self._feeds = {}
+
+    @property
+    def feeds(self):
+        """Returns a list of the names of each DataFeed belonging to this object."""
+        return list(self._feeds.keys())
 
     @abstractmethod
     def update(self):
         """Updates the DataView, either by assimilating new market data or by incrementing the time step used for
-        accessing data from a database."""
+        accessing data from a DataBase."""
         pass
+
+    @abstractmethod
+    def add_feed(self, items: Union[AbstractDataFeed, List[AbstractDataFeed]]):
+        """Adds a DataFeed to this object, unless another DataFeed with the same name attribute is already linked."""
+        pass
+
+    def __getitem__(self, item: str):
+        """Allows the DataFeed objects to be accessed by 'MyDataView[feed_name]' notation."""
+        if isinstance(item, str):
+            if item not in self.feeds:
+                raise KeyError(f"{item} not found")
+            else:
+                return self._feeds[item]
+        else:
+            raise KeyError(
+                f"key must be a string representing the name of a linked DataFeed"
+            )
