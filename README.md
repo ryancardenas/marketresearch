@@ -90,7 +90,7 @@ classDiagram
         +data_type: type
         -data_source: AbstractDataBase
         +update(): None
-        -connect_data_source(): None
+        -connect_to_database(): None
     }
     
     class AbstractInstrument{
@@ -110,7 +110,7 @@ classDiagram
         +datetime: array~datetime64~
         -data_source: AbstractDataBase
         +update(): None
-        -connect_data_source(): None
+        -connect_to_database(): None
         -__getitem__(): None
     }
 
