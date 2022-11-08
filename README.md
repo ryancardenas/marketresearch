@@ -73,3 +73,99 @@ graph LR
     end
     style AlgoTrading color:#ffffde
 ```
+
+## DataView Classes
+```mermaid
+classDiagram
+    class AbstractDataView{
+        +feeds: list~string~
+        -feeds: dict~string:AbstractDataFeed~
+        +update(): None
+        -__getitem__(): None
+    }
+
+    class AbstractDataFeed{
+        +name: string
+        +data_type: type
+        +update(): None
+    }
+    
+    class AbstractInstrument{
+        +timeframes: list~string~
+        -timeframes: dict~string:AbstractTimeframe~
+        -initialize_timeframe_views(): None
+        -__getitem__(): None
+    }
+
+    class AbstractTimeframe{
+        +name: string
+        +open: array~float~
+        +high: array~float~ 
+        +low: array~float~
+        +close: array~float~ 
+        +volume: array~int~
+        +datetime: array~datetime64~
+        +update(): None
+        -connect_data_source(): None
+        -__getitem__(): None
+    }
+
+    class AbstractIndicator{
+        +name: string
+        +update(): None
+    }
+
+    class BacktestDataView{
+
+    }
+
+    class FxInstrument{
+
+    }
+
+    class FutureInstrument{
+        <<not yet implemented>>
+    }
+
+    class StockInstrument{
+        <<not yet implemented>>
+    }
+
+    class OptionInstrument{
+        <<not yet implemented>>
+    }
+
+    class StockOptionInstrument{
+        <<not yet implemented>>
+    }
+
+    class IndexOptionInstrument{
+        <<not yet implemented>>
+    }
+
+    class StandardTimeframe{
+        <<not yet implemented>>
+    }
+
+    class FxTimeframe{
+        +spread: array~float~
+        +tickvolume: array~int~
+        +tradevolume: array~int~
+        +swap: array~float~
+    }
+
+    AbstractDataView <|-- BacktestDataView
+    AbstractDataView o-- AbstractDataFeed
+    AbstractDataFeed <|-- AbstractInstrument
+    AbstractInstrument *-- AbstractTimeframe
+    AbstractTimeframe *-- AbstractIndicator
+    AbstractInstrument <|-- OptionInstrument
+    AbstractInstrument <|-- FxInstrument
+    AbstractInstrument <|-- FutureInstrument
+    AbstractInstrument <|-- StockInstrument
+    OptionInstrument <|-- StockOptionInstrument
+    OptionInstrument <|-- IndexOptionInstrument
+    AbstractTimeframe <|-- FxTimeframe
+    AbstractTimeframe <|-- StandardTimeframe
+
+```
