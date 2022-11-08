@@ -99,10 +99,10 @@ class AbstractTimeframe(ABC):
     def __getitem__(self, item: str):
         """Allows the Indicator objects to be accessed by 'MyTimeframe[indicator_name]' notation."""
         if isinstance(item, str):
-            if item not in self.timeframes:
+            if item not in self.indicators:
                 raise KeyError(f"{item} not found")
             else:
-                return self._timeframes[item]
+                return self._indicators[item]
         else:
             raise KeyError(
                 f"key must be a string representing the name of a linked Timeframe"
