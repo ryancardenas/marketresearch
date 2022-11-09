@@ -112,7 +112,7 @@ class AbstractTimeframe(ABC):
 
     @abstractmethod
     def add_indicator(
-        self, timeframes: Union[AbstractIndicator, List[AbstractIndicator]]
+        self, indicators: Union[AbstractIndicator, List[AbstractIndicator]]
     ):
         """Creates Indicator objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
@@ -300,7 +300,7 @@ class AbstractDataView(ABC):
         pass
 
     @abstractmethod
-    def add_feed(self, items: Union[AbstractDataFeed, List[AbstractDataFeed]]):
+    def add_feed(self, feeds: Union[AbstractDataFeed, List[AbstractDataFeed]]):
         """Adds a DataFeed to this object, unless another DataFeed with the same name attribute is already linked."""
         pass
 
