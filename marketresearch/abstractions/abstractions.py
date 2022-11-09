@@ -110,7 +110,6 @@ class AbstractTimeframe(ABC):
         accessing data from a DataBase."""
         pass
 
-    @abstractmethod
     def add_indicator(
         self, indicators: Union[AbstractIndicator, List[AbstractIndicator]]
     ):
@@ -195,7 +194,6 @@ class AbstractInstrument(AbstractDataFeed):
         """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
         pass
 
-    @abstractmethod
     def add_timeframe(
         self, timeframes: Union[AbstractTimeframe, List[AbstractTimeframe]]
     ):
