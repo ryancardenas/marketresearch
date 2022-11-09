@@ -299,10 +299,16 @@ class AbstractDataView(ABC):
         accessing data from a DataBase."""
         pass
 
-    @abstractmethod
     def add_feed(self, feeds: Union[AbstractDataFeed, List[AbstractDataFeed]]):
         """Adds a DataFeed to this object, unless another DataFeed with the same name attribute is already linked."""
-        pass
+        if not isinstance(feeds, List):
+            feeds = [feeds]
+
+        for feed in feeds:
+            if feed.name in self.feeds:
+                print(f"DataFeed with name {feed.name} is already linked! Skipping...")
+            else:
+                self._feeds[feed.name] = feed
 
     def __getitem__(self, item: str):
         """Allows the DataFeed objects to be accessed by 'MyDataView[feed_name]' notation."""
