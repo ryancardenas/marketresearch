@@ -116,7 +116,16 @@ class AbstractTimeframe(ABC):
     ):
         """Creates Indicator objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
-        pass
+        if not isinstance(indicators, List):
+            indicators = [indicators]
+
+        for indicator in indicators:
+            if indicator.name in self.indicators:
+                print(
+                    f"DataFeed with name {indicator.name} is already linked! Skipping..."
+                )
+            else:
+                self._indicators[indicator.name] = indicator
 
     @abstractmethod
     def connect_to_database(self):
@@ -197,7 +206,9 @@ class AbstractInstrument(AbstractDataFeed):
 
         for timeframe in timeframes:
             if timeframe.name in self.timeframes:
-                print(f"DataFeed with name {timeframe.name} is already linked! Skipping...")
+                print(
+                    f"DataFeed with name {timeframe.name} is already linked! Skipping..."
+                )
             else:
                 self._timeframes[timeframe.name] = timeframe
 
