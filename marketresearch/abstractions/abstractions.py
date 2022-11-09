@@ -192,7 +192,14 @@ class AbstractInstrument(AbstractDataFeed):
     ):
         """Creates Timeframe objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
-        pass
+        if not isinstance(timeframes, List):
+            timeframes = [timeframes]
+
+        for timeframe in timeframes:
+            if timeframe.name in self.timeframes:
+                print(f"DataFeed with name {timeframe.name} is already linked! Skipping...")
+            else:
+                self._timeframes[timeframe.name] = timeframe
 
     def __getitem__(self, item: str):
         """Allows the Timeframe objects to be accessed by 'MyInstrument[timeframe_name]' notation."""
