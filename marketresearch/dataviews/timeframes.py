@@ -90,9 +90,7 @@ class FxTimeframe(abmr.AbstractTimeframe):
         assert len(attrs) == len(values), "attrs and values must have same length"
         for attr, value in zip(attrs, values):
             if attr is None:
-                raise ValueError(
-                    "attr must not be None"
-                )
+                raise ValueError("attr must not be None")
             else:
                 setattr(self, attr, value)
         self._data_source.update()
