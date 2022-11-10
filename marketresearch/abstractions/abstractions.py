@@ -10,6 +10,7 @@ Contains abstract classes for marketresearch project.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import List, Optional, Union
 
 
@@ -19,8 +20,11 @@ class AbstractDataBase(ABC):
     files; it does not include online services that require API requests, such as TD Ameritrade or MetaTrader5. For
     accessing data through an API-configured online service, see AbstractClient."""
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, src_fn: Union[str, Path], file_mode: str = "r"):
         self.name = name
+        self.src_fn = src_fn
+        self.file_mode = file_mode
+        self.f = None
 
     @abstractmethod
     def connect(self):
@@ -32,6 +36,14 @@ class AbstractDataBase(ABC):
     @abstractmethod
     def update(self):
         """Updates the DataBase by saving new market data to disk."""
+        pass
+
+
+class AbstractCandlestickDataBase(AbstractDataBase):
+    """A DataBase that provides OHLCTV data."""
+
+    @abstractmethod
+    def retrieve_dataset(self, symbol: str, timeframe: str, dataset: str):
         pass
 
 
@@ -63,7 +75,10 @@ class AbstractTimeframe(ABC):
     but no more than one for each unique aggregation period."""
 
     def __init__(
-        self, name: str, parent: AbstractInstrument, data_source: Optional[AbstractDataBase] = None
+        self,
+        name: str,
+        parent: AbstractInstrument,
+        data_source: Optional[AbstractCandlestickDataBase] = None,
     ):
         self.name = name
         self._parent = parent
@@ -72,7 +87,10 @@ class AbstractTimeframe(ABC):
         else:
             self._data_source = data_source
         self._indicators = {}
-        self._protected_names = ['open', 'high', 'low', 'close', 'volume', 'datetime']
+        self._protected_names = ["open", "high", "low", "close", "volume", "datetime"]
+        self._connect_to_database()
+        self.symbol = self._parent.name
+        self._slice = slice(0, None)
 
     @property
     def indicators(self):
@@ -115,6 +133,11 @@ class AbstractTimeframe(ABC):
         accessing data from a DataBase."""
         pass
 
+    @abstractmethod
+    def _connect_to_database(self):
+        """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
+        pass
+
     def add_indicator(
         self, indicators: Union[AbstractIndicator, List[AbstractIndicator]]
     ):
@@ -134,11 +157,6 @@ class AbstractTimeframe(ABC):
                 )
             else:
                 self._indicators[indicator.name] = indicator
-
-    @abstractmethod
-    def _connect_to_database(self):
-        """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
-        pass
 
     def __getitem__(self, item: str):
         """Allows the Indicator objects to be accessed by 'MyTimeframe[indicator_name]' notation. If the Indicator
