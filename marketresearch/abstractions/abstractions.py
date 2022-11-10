@@ -10,33 +10,28 @@ Contains abstract classes for marketresearch project.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Union
+from typing import List, Optional, Union
 
 
 class AbstractDataBase(ABC):
     """Abstract class representing the interface between a source of data and a DataFeed or TimeFrame. A DataBase may
-    source data from a file on disk, a specific server, the internet at large, or another program."""
+    source data from a file on disk or on a server. The scope of this class is limited to data sources that are
+    files; it does not include online services that require API requests, such as TD Ameritrade or MetaTrader5. For
+    accessing data through an API-configured online service, see AbstractClient."""
 
     def __init__(self, name: str):
         self.name = name
 
     @abstractmethod
     def connect(self):
-        """Establishes a connection between this interface and the data source. For a file, this may mean loading
-        data into memory (or for an HDF5 file, simply loading pointers into memory). For a server, this may mean
-        establishing a remote connection. For the internet at large, this may mean opening a browser. For a program,
-        this may mean calling the external code."""
-        pass
-
-    @abstractmethod
-    def serve(self):
-        """Provides data to the requesting party (typically a DataFeed or TimeFrame)."""
+        """Establishes a connection between this interface and the data source. For a local file, this may mean loading
+        data (or pointers) into memory. For a file located on a server, this may mean establishing a remote
+        connection and downloading the file or opening lines of communication with the file."""
         pass
 
     @abstractmethod
     def update(self):
-        """Updates the DataBase, either by assimilating new market data or by incrementing the time step used for
-        accessing data from a source."""
+        """Updates the DataBase by saving new market data to disk."""
         pass
 
 
@@ -47,6 +42,12 @@ class AbstractIndicator(ABC):
     def __init__(self, name: str, parent: AbstractTimeframe):
         self.name = name
         self._parent = parent
+        self._values = []
+
+    @property
+    @abstractmethod
+    def values(self):
+        pass
 
     @abstractmethod
     def update(self):
@@ -62,12 +63,16 @@ class AbstractTimeframe(ABC):
     but no more than one for each unique aggregation period."""
 
     def __init__(
-        self, name: str, data_source: AbstractDataBase, parent: AbstractInstrument
+        self, name: str, parent: AbstractInstrument, data_source: Optional[AbstractDataBase] = None
     ):
         self.name = name
-        self._data_source = data_source
         self._parent = parent
+        if data_source is None:
+            self._data_source = self._parent._data_source
+        else:
+            self._data_source = data_source
         self._indicators = {}
+        self._protected_names = ['open', 'high', 'low', 'close', 'volume', 'datetime']
 
     @property
     def indicators(self):
@@ -123,21 +128,28 @@ class AbstractTimeframe(ABC):
                 print(
                     f"DataFeed with name {indicator.name} is already linked! Skipping..."
                 )
+            elif indicator.name in self._protected_names:
+                print(
+                    f"Indicator name must not be any of {self._protected_names}. Skipping..."
+                )
             else:
                 self._indicators[indicator.name] = indicator
 
     @abstractmethod
-    def connect_to_database(self):
+    def _connect_to_database(self):
         """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
         pass
 
     def __getitem__(self, item: str):
-        """Allows the Indicator objects to be accessed by 'MyTimeframe[indicator_name]' notation."""
+        """Allows the Indicator objects to be accessed by 'MyTimeframe[indicator_name]' notation. If the Indicator
+        has a protected name, then call the Timeframe property that the name refers to."""
         if isinstance(item, str):
             if item not in self.indicators:
                 raise KeyError(f"{item} not found")
+            elif item in self._protected_names:
+                return getattr(self, item)
             else:
-                return self._indicators[item]
+                return self._indicators[item].values
         else:
             raise KeyError(
                 f"key must be a string representing the name of a linked Timeframe"
@@ -165,7 +177,7 @@ class AbstractDataFeed(ABC):
         pass
 
     @abstractmethod
-    def connect_to_database(self):
+    def _connect_to_database(self):
         """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
         pass
 
@@ -190,7 +202,7 @@ class AbstractInstrument(AbstractDataFeed):
         pass
 
     @abstractmethod
-    def connect_to_database(self):
+    def _connect_to_database(self):
         """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
         pass
 
