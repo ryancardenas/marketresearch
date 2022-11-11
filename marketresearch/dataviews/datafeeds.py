@@ -1,12 +1,11 @@
 #!/usr/bin/env python
 """Copyright 2022 Ryan Cardenas
-Name: instruments
+Name: datafeeds
 Project: marketresearch
 Author: Ryan Cardenas
 Creation Date: 11/8/2022
 
-Instrument classes that contain information specific to a financial instrument and hold references to related
-timeframes.
+DataFeed classes that can be connected to a DataView.
 """
 
 from typing import List, Optional
