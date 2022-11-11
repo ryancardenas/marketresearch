@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Tuple, Type
 
 
 class AbstractDataBase(ABC):
@@ -139,14 +139,12 @@ class AbstractTimeframe(ABC):
         pass
 
     def add_indicator(
-        self, indicators: Union[AbstractIndicator, List[AbstractIndicator]]
+        self, indicators: List[Tuple[Type[AbstractIndicator], dict]]
     ):
         """Creates Indicator objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
-        if not isinstance(indicators, List):
-            indicators = [indicators]
-
-        for indicator in indicators:
+        for indicator_class, args in indicators:
+            indicator = indicator_class(parent=self, **args)
             if indicator.name in self.indicators:
                 print(
                     f"DataFeed with name {indicator.name} is already linked! Skipping..."
@@ -225,14 +223,12 @@ class AbstractInstrument(AbstractDataFeed):
         pass
 
     def add_timeframe(
-        self, timeframes: Union[AbstractTimeframe, List[AbstractTimeframe]]
+        self, timeframes: List[Tuple[Type[AbstractTimeframe], dict]]
     ):
         """Creates Timeframe objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
-        if not isinstance(timeframes, List):
-            timeframes = [timeframes]
-
-        for timeframe in timeframes:
+        for timeframe_class, args in timeframes:
+            timeframe = timeframe_class(parent=self, **args)
             if timeframe.name in self.timeframes:
                 print(
                     f"DataFeed with name {timeframe.name} is already linked! Skipping..."
