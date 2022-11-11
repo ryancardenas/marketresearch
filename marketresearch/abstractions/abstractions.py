@@ -138,9 +138,7 @@ class AbstractTimeframe(ABC):
         """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
         pass
 
-    def add_indicator(
-        self, indicators: List[Tuple[Type[AbstractIndicator], dict]]
-    ):
+    def add_indicator(self, indicators: List[Tuple[Type[AbstractIndicator], dict]]):
         """Creates Indicator objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
         for indicator_class, args in indicators:
@@ -205,6 +203,7 @@ class AbstractInstrument(AbstractDataFeed):
     def __init__(self, name: str, data_source: AbstractDataBase):
         super().__init__(name=name, data_source=data_source)
         self._timeframes = {}
+        self._default_timeframe_class = None
 
     @property
     def timeframes(self):
@@ -222,19 +221,17 @@ class AbstractInstrument(AbstractDataFeed):
         """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
         pass
 
-    def add_timeframe(
-        self, timeframes: List[Tuple[Type[AbstractTimeframe], dict]]
-    ):
+    def add_timeframe(self, timeframes: dict):
         """Creates Timeframe objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
-        for timeframe_class, args in timeframes:
-            timeframe = timeframe_class(parent=self, **args)
-            if timeframe.name in self.timeframes:
+        for name, args in timeframes.items():
+            if name in self.timeframes:
                 print(
-                    f"DataFeed with name {timeframe.name} is already linked! Skipping..."
+                    f"DataFeed with name {name} is already linked! Skipping..."
                 )
             else:
-                self._timeframes[timeframe.name] = timeframe
+                timeframe = self._default_timeframe_class(name=name, parent=self, **args)
+                self._timeframes[name] = timeframe
 
     def __getitem__(self, item: str):
         """Allows the Timeframe objects to be accessed by 'MyInstrument[timeframe_name]' notation."""
