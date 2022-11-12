@@ -58,14 +58,14 @@ class HDF5CandlestickDataBase(abmr.AbstractCandlestickDataBase):
 
     @staticmethod
     def translate_timeframe(timeframe):
-        if timeframe in ['D1', 'D']:
-            translated = 'Daily'
-        elif timeframe in ['W1', 'W']:
-            translated = 'Weekly'
-        elif timeframe in ['M1', 'M']:
-            translated = 'Monthly'
-        elif timeframe[0] == 'm':
-            translated = 'M' + timeframe[1:]
+        if timeframe in ["D1", "D"]:
+            translated = "Daily"
+        elif timeframe in ["W1", "W"]:
+            translated = "Weekly"
+        elif timeframe in ["M1", "M"]:
+            translated = "Monthly"
+        elif timeframe[0] == "m":
+            translated = "M" + timeframe[1:]
         else:
             translated = timeframe
         return translated
