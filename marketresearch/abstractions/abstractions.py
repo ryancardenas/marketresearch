@@ -10,8 +10,11 @@ Contains abstract classes for marketresearch project.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import functools
 from pathlib import Path
 from typing import List, Optional, Union, Tuple, Type
+
+import pandas as pd
 
 
 class AbstractDataBase(ABC):
@@ -25,6 +28,8 @@ class AbstractDataBase(ABC):
         self.src_fn = src_fn
         self.file_mode = file_mode
         self.f = None
+        self.start_datetime = pd.to_datetime("1900")
+        self.stop_datetime = pd.to_datetime("today")
 
     @abstractmethod
     def connect(self):
@@ -68,6 +73,7 @@ class AbstractIndicator(ABC):
         pass
 
 
+@functools.total_ordering
 class AbstractTimeframe(ABC):
     """Abstract class representing the wrapper for data that is typically charted for a financial instrument. A
     Timeframe stores OHLC, timestamps, volume, and other data for a specific Instrument for a single aggregation
@@ -81,6 +87,9 @@ class AbstractTimeframe(ABC):
         data_source: Optional[AbstractCandlestickDataBase] = None,
         init_slice: slice = slice(0, 0),
     ):
+        assert name[0] in ['M', 'W', 'D', 'H', 'm']
+        assert 2 <= len(name) <= 3
+        assert 0 < int(name[1:]) < 100
         self.name = name
         self._parent = parent
         if data_source is None:
@@ -92,6 +101,13 @@ class AbstractTimeframe(ABC):
         self._connect_to_database()
         self.symbol = self._parent.name
         self._slice = init_slice
+        self._timeframe_values = {
+            'M': 30.,
+            'W': 7.,
+            'D': 1.,
+            'H': 1/24,
+            'm': 1/1440
+        }
 
     @property
     def indicators(self):
@@ -164,16 +180,43 @@ class AbstractTimeframe(ABC):
         """Allows the Indicator objects to be accessed by 'MyTimeframe[indicator_name]' notation. If the Indicator
         has a protected name, then call the Timeframe property that the name refers to."""
         if isinstance(item, str):
-            if item not in self.indicators:
-                raise KeyError(f"{item} not found")
+            if item in self.indicators:
+                return self._indicators[item].values
             elif item in self._protected_names:
                 return getattr(self, item)
             else:
-                return self._indicators[item].values
+                raise KeyError(f"{item} not found")
         else:
             raise KeyError(
                 f"key must be a string representing the name of a linked Timeframe"
             )
+
+    @property
+    def _value(self):
+        """Determines the 'value' of this Timeframe for comparison against other Timeframes."""
+        val = self._timeframe_values[self.name[0]]
+        val *= int(self.name[1:])
+        return val
+
+    def __lt__(self, obj: AbstractTimeframe):
+        """Determines if this Timeframe is 'less than' another Timeframe."""
+        return self._value < obj._value
+
+    def __gt__(self, obj: AbstractTimeframe):
+        """Determines if this Timeframe is 'greater than' another Timeframe."""
+        return self._value > obj._value
+
+    def __le__(self, obj: AbstractTimeframe):
+        """Determines if this Timeframe is 'less than or equal to' another Timeframe."""
+        return self._value <= obj._value
+
+    def __ge__(self, obj: AbstractTimeframe):
+        """Determines if this Timeframe is 'greater than or equal to' another Timeframe."""
+        return self._value >= obj._value
+
+    def __eq__(self, obj: AbstractTimeframe):
+        """Determines if this Timeframe is 'equal to' another Timeframe."""
+        return self._value == obj._value
 
 
 class AbstractDataFeed(ABC):
@@ -341,6 +384,7 @@ class AbstractDataView(ABC):
 
     def __init__(self):
         self._feeds = {}
+        self.clock = pd.to_datetime("today")
 
     @property
     def feeds(self):
