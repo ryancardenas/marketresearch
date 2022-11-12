@@ -384,7 +384,8 @@ class AbstractDataView(ABC):
 
     def __init__(self):
         self._feeds = {}
-        self.clock = pd.to_datetime("today")
+        self.start_datetime = pd.to_datetime("1900")
+        self.stop_datetime = pd.to_datetime("today")
 
     @property
     def feeds(self):
@@ -395,6 +396,11 @@ class AbstractDataView(ABC):
     def update(self):
         """Updates the DataView, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
+        pass
+
+    @abstractmethod
+    def update_feeds(self, args: Optional[dict] = None):
+        """Updates all child DataFeeds with the specified value at the specified attribute."""
         pass
 
     def add_feed(self, feeds: Union[AbstractDataFeed, List[AbstractDataFeed]]):
