@@ -24,9 +24,9 @@ elsewhere on your machine.
 graph LR
     subgraph Mining[Data Mining]
         direction LR
-        MiningAgent(Agent) -- <br>data request --> MiningClient(Client)
-        MiningClient -- response packet<br><br> --> MiningAgent
-        MiningAgent -- <br><br>valid response packet --> MiningDataView(DataView)
+        MiningAgent(Agent) -- <br>data requests --> MiningClient(Client)
+        MiningClient -- response packets<br><br> --> MiningAgent
+        MiningAgent -- <br><br>valid response packets --> MiningDataView(DataView)
         MiningDataView -- <br>processed data --> MiningDatabase[(Database)]
     end
     style Mining color:#ffffde
@@ -38,7 +38,7 @@ graph LR
 graph RL
     subgraph Backtesting
     direction RL
-        BacktestingAgent(Agent) -- <br>empty response packet --> BacktestingDataView(DataView)
+        BacktestingAgent(Agent) -- <br>empty response packets --> BacktestingDataView(DataView)
         BacktestingDataView(DataView) -- processed data<br><br> --> BacktestingAgent
         BacktestingDatabase[(Database)] -. <br>access .-> BacktestingDataView
     end
@@ -51,10 +51,10 @@ graph RL
 graph RL
     subgraph Simulation
     direction RL
-        SimulationAgent(Agent) -- <br><br><br>data request<br>trade order --> SimulationClient(Client)
-        SimulationClient -- response packet<br><br><br> --> SimulationDataView(DataView)
+        SimulationAgent(Agent) -- <br><br><br>data requests<br>trade orders --> SimulationClient(Client)
+        SimulationClient -- response packets<br><br><br> --> SimulationDataView(DataView)
         SimulationDataView -- processed data<br><br><br> --> SimulationAgent
-        SimulationClient -- data request<br>trade order<br><br> --> SimulationMarket(Market)
+        SimulationClient -- data requests<br>trade orders<br><br> --> SimulationMarket(Market)
         SimulationMarket -- <br>price action data<br>trade receipts --> SimulationClient
     end
     style Simulation color:#ffffde
@@ -66,9 +66,9 @@ graph RL
 graph LR
     subgraph AlgoTrading
     direction LR
-        AlgoTradingAgent(Agent) -- <br><br>data request<br>trade order --> AlgoTradingClient(Client)
-        AlgoTradingClient -- response packet<br><br> --> AlgoTradingAgent
-        AlgoTradingAgent -- valid response packet<br><br> --> AlgoTradingDataView(DataView)
+        AlgoTradingAgent(Agent) -- <br><br>data requests<br>trade orders --> AlgoTradingClient(Client)
+        AlgoTradingClient -- response packets<br><br> --> AlgoTradingAgent
+        AlgoTradingAgent -- valid response packets<br><br> --> AlgoTradingDataView(DataView)
         AlgoTradingDataView -- <br>processed data --> AlgoTradingAgent
     end
     style AlgoTrading color:#ffffde
