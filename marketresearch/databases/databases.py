@@ -53,4 +53,19 @@ class HDF5CandlestickDataBase(abmr.AbstractCandlestickDataBase):
         pass
 
     def retrieve_dataset(self, symbol: str, timeframe: str, dataset: str):
-        return self.f[symbol][timeframe][dataset]
+        translated_timeframe = self.translate_timeframe(timeframe)
+        return self.f[symbol][translated_timeframe][dataset]
+
+    @staticmethod
+    def translate_timeframe(timeframe):
+        if timeframe in ['D1', 'D']:
+            translated = 'Daily'
+        elif timeframe in ['W1', 'W']:
+            translated = 'Weekly'
+        elif timeframe in ['M1', 'M']:
+            translated = 'Monthly'
+        elif timeframe[0] == 'm':
+            translated = 'M' + timeframe[1:]
+        else:
+            translated = timeframe
+        return translated
