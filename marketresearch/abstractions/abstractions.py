@@ -87,7 +87,7 @@ class AbstractTimeframe(ABC):
         data_source: Optional[AbstractCandlestickDataBase] = None,
         init_slice: slice = slice(0, 0),
     ):
-        assert name[0] in ['M', 'W', 'D', 'H', 'm']
+        assert name[0] in ["M", "W", "D", "H", "m"]
         assert 2 <= len(name) <= 3
         assert 0 < int(name[1:]) < 100
         self.name = name
@@ -102,11 +102,11 @@ class AbstractTimeframe(ABC):
         self.symbol = self._parent.name
         self._slice = init_slice
         self._timeframe_values = {
-            'M': 30.,
-            'W': 7.,
-            'D': 1.,
-            'H': 1/24,
-            'm': 1/1440
+            "M": 30.0,
+            "W": 7.0,
+            "D": 1.0,
+            "H": 1 / 24,
+            "m": 1 / 1440,
         }
 
     @property
