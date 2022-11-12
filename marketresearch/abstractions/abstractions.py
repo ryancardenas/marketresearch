@@ -62,7 +62,7 @@ class AbstractIndicator(ABC):
         pass
 
     @abstractmethod
-    def update(self):
+    def update(self, args: Optional[dict] = None):
         """Updates the Indicator, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
         pass
@@ -79,6 +79,7 @@ class AbstractTimeframe(ABC):
         name: str,
         parent: AbstractInstrument,
         data_source: Optional[AbstractCandlestickDataBase] = None,
+        init_slice: slice = slice(0, 0),
     ):
         self.name = name
         self._parent = parent
@@ -90,7 +91,7 @@ class AbstractTimeframe(ABC):
         self._protected_names = ["open", "high", "low", "close", "volume", "datetime"]
         self._connect_to_database()
         self.symbol = self._parent.name
-        self._slice = slice(0, None)
+        self._slice = init_slice
 
     @property
     def indicators(self):
@@ -134,18 +135,23 @@ class AbstractTimeframe(ABC):
         pass
 
     @abstractmethod
+    def update_indicators(self, args: Optional[dict] = None):
+        """Updates all child Indicators with the specified value at the specified attribute."""
+        pass
+
+    @abstractmethod
     def _connect_to_database(self):
         """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
         pass
 
-    def add_indicator(self, indicators: List[Tuple[Type[AbstractIndicator], dict]]):
+    def add_indicators(self, indicators: List[Tuple[Type[AbstractIndicator], dict]]):
         """Creates Indicator objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
         for indicator_class, args in indicators:
             indicator = indicator_class(parent=self, **args)
             if indicator.name in self.indicators:
                 print(
-                    f"DataFeed with name {indicator.name} is already linked! Skipping..."
+                    f"Indicator with name {indicator.name} is already linked! Skipping..."
                 )
             elif indicator.name in self._protected_names:
                 print(
@@ -211,9 +217,14 @@ class AbstractInstrument(AbstractDataFeed):
         return list(self._timeframes.keys())
 
     @abstractmethod
-    def update(self):
+    def update(self, args: Optional[dict] = None):
         """Updates the Instrument, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
+        pass
+
+    @abstractmethod
+    def update_timeframes(self, args: Optional[dict] = None):
+        """Updates all child Timeframes with the specified value at the specified attribute."""
         pass
 
     @abstractmethod
@@ -226,12 +237,16 @@ class AbstractInstrument(AbstractDataFeed):
         don't already exist and are not duplicates of each other."""
         for name, args in timeframes.items():
             if name in self.timeframes:
-                print(
-                    f"DataFeed with name {name} is already linked! Skipping..."
-                )
+                print(f"DataFeed with name {name} is already linked! Skipping...")
             else:
-                timeframe = self._default_timeframe_class(name=name, parent=self, **args)
+                timeframe = self._default_timeframe_class(
+                    name=name, parent=self, **args
+                )
                 self._timeframes[name] = timeframe
+
+    def add_indicators(self, indicators: List[Tuple[Type[AbstractIndicator], dict]]):
+        for key in self.timeframes:
+            self._timeframes[key].add_indicators(indicators=indicators)
 
     def __getitem__(self, item: str):
         """Allows the Timeframe objects to be accessed by 'MyInstrument[timeframe_name]' notation."""
