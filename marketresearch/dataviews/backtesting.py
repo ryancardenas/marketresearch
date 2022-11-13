@@ -54,7 +54,7 @@ class BacktestTimeframe(ABC):
         self._indicators = {}
         self._protected_names = ["open", "high", "low", "close", "volume", "datetime"]
         self._connect_to_database()
-        self._get_all_datetimes()
+        self._all_datetimes = self._get_all_datetimes()
         self._timeframe_values = {
             "M": 28.0 * 10080.0,
             "W": 10080.0,
@@ -62,13 +62,15 @@ class BacktestTimeframe(ABC):
             "H": 60.0,
             "m": 1.0,
         }
-        self._initialize_timedelta()
+        self._slice = slice(0, None)
+        self._smart_bar_slice = slice(-1, -1)
+        self.timedelta = self._initialize_timedelta()
 
     def _initialize_timedelta(self):
         char = self.name[0]
         basenum = int(self.name[1:])
         num = basenum * self._timeframe_values[char]
-        self.timedelta = pd.Timedelta(f"{num}m")
+        return pd.Timedelta(f"{num}m")
 
     @property
     def start_datetime(self):
@@ -77,6 +79,16 @@ class BacktestTimeframe(ABC):
     @property
     def stop_datetime(self):
         return self._stop_datetime
+
+    @property
+    def smallest_timedelta(self):
+        min_tf_name = self._parent.smallest_timeframe
+        min_tf = self._parent._timeframes[min_tf_name]
+        return min_tf.timedelta
+
+    @property
+    def is_smallest_timeframe(self):
+        return self.timedelta == self.smallest_timedelta
 
     @property
     def indicators(self):
@@ -119,9 +131,9 @@ class BacktestTimeframe(ABC):
             timeframe=self.name,
             dataset="timestamp",
         )
-        self._all_datetimes = pd.to_datetime(vals[:])
+        return pd.to_datetime(vals[:])
 
-    def _update_slice(self):
+    def _update_slice(self, initial_update: bool = False):
         datetime = self._all_datetimes
         assert (
             datetime[-1] > self._start_datetime
@@ -133,8 +145,23 @@ class BacktestTimeframe(ABC):
             datetime[0] < self._stop_datetime
         ), f"{self.name} datetimes begin after _stop_datetime"
         start_idx = np.where(datetime > self._start_datetime)[0][0]
-        stop_idx = np.where(datetime > self._stop_datetime)[0][0]
+        stop_idx = np.where(datetime > self._stop_datetime - self.timedelta)[0][0]
         self._slice = slice(start_idx, stop_idx)
+        if not initial_update:
+            self._update_smart_bar_slice()
+
+    def _update_smart_bar_slice(self):
+        if self.is_smallest_timeframe:
+            self._smart_bar_slice = slice(-1, -1)
+        else:
+            min_tf_name = self._parent.smallest_timeframe
+            min_tf = self._parent._timeframes[min_tf_name]
+            small_datetime = min_tf._all_datetimes
+
+            start_datetime = self._all_datetimes[self._slice.stop]
+            start_idx = np.where(small_datetime >= start_datetime)[0][0]
+            stop_idx = min_tf._slice.stop
+            self._smart_bar_slice = slice(start_idx, stop_idx)
 
     def update(self, args: Optional[dict] = None, propogate: bool = False):
         """Updates the Timeframe, either by assimilating new market data or by incrementing the time step used for
@@ -247,8 +274,8 @@ class BacktestInstrument(abmr.AbstractDataFeed):
         min_dt = pd.to_datetime("1700")
         max_dt = pd.to_datetime("today")
         for name in self.timeframes:
-            dt_low = self._timeframes[name].datetime.min()
-            dt_high = self._timeframes[name].datetime.max()
+            dt_low = self._timeframes[name]._all_datetimes.min()
+            dt_high = self._timeframes[name]._all_datetimes.max()
             if dt_low > min_dt:
                 min_dt = dt_low
             if dt_high < max_dt:
@@ -302,6 +329,8 @@ class BacktestInstrument(abmr.AbstractDataFeed):
                     name=name, parent=self, **args
                 )
                 self._timeframes[name] = timeframe
+        for name in self.timeframes:
+            self._timeframes[name]._update_smart_bar_slice()
         self._initialize_parent_datetime_boundaries()
 
     def add_indicators(self, indicators: List[Tuple[Type[AbstractIndicator], dict]]):
@@ -331,7 +360,7 @@ class FxTimeframe(BacktestTimeframe):
         data_source: Optional[abmr.AbstractDataBase] = None,
     ):
         super().__init__(name=name, parent=parent, data_source=data_source)
-        self._update_slice()
+        self._update_slice(initial_update=True)
 
     @property
     def open(self):
@@ -340,7 +369,12 @@ class FxTimeframe(BacktestTimeframe):
             timeframe=self.name,
             dataset="open",
         )
-        return dataset[self._slice]
+        smart_bar = np.array([])
+        if not self.is_smallest_timeframe:
+            min_tf_name = self._parent.smallest_timeframe
+            min_tf = self._parent._timeframes[min_tf_name]
+            smart_bar = min_tf.open[self._smart_bar_slice]
+        return np.r_[dataset[self._slice], smart_bar]
 
     @property
     def high(self):
@@ -349,7 +383,12 @@ class FxTimeframe(BacktestTimeframe):
             timeframe=self.name,
             dataset="high",
         )
-        return dataset[self._slice]
+        smart_bar = np.array([])
+        if not self.is_smallest_timeframe:
+            min_tf_name = self._parent.smallest_timeframe
+            min_tf = self._parent._timeframes[min_tf_name]
+            smart_bar = min_tf.high[self._smart_bar_slice]
+        return np.r_[dataset[self._slice], smart_bar]
 
     @property
     def low(self):
@@ -358,7 +397,12 @@ class FxTimeframe(BacktestTimeframe):
             timeframe=self.name,
             dataset="low",
         )
-        return dataset[self._slice]
+        smart_bar = np.array([])
+        if not self.is_smallest_timeframe:
+            min_tf_name = self._parent.smallest_timeframe
+            min_tf = self._parent._timeframes[min_tf_name]
+            smart_bar = min_tf.low[self._smart_bar_slice]
+        return np.r_[dataset[self._slice], smart_bar]
 
     @property
     def close(self):
@@ -367,7 +411,12 @@ class FxTimeframe(BacktestTimeframe):
             timeframe=self.name,
             dataset="close",
         )
-        return dataset[self._slice]
+        smart_bar = np.array([])
+        if not self.is_smallest_timeframe:
+            min_tf_name = self._parent.smallest_timeframe
+            min_tf = self._parent._timeframes[min_tf_name]
+            smart_bar = min_tf.close[self._smart_bar_slice]
+        return np.r_[dataset[self._slice], smart_bar]
 
     @property
     def volume(self):
@@ -376,7 +425,12 @@ class FxTimeframe(BacktestTimeframe):
             timeframe=self.name,
             dataset="tickvol",
         )
-        return dataset[self._slice]
+        smart_bar = np.array([])
+        if not self.is_smallest_timeframe:
+            min_tf_name = self._parent.smallest_timeframe
+            min_tf = self._parent._timeframes[min_tf_name]
+            smart_bar = min_tf.volume[self._smart_bar_slice]
+        return np.r_[dataset[self._slice], smart_bar]
 
     @property
     def datetime(self):
@@ -385,7 +439,12 @@ class FxTimeframe(BacktestTimeframe):
             timeframe=self.name,
             dataset="timestamp",
         )
-        return pd.to_datetime(dataset[self._slice])
+        smart_bar = np.array([])
+        if not self.is_smallest_timeframe:
+            min_tf_name = self._parent.smallest_timeframe
+            min_tf = self._parent._timeframes[min_tf_name]
+            smart_bar = min_tf.datetime[self._smart_bar_slice]
+        return np.r_[dataset[self._slice], smart_bar]
 
 
 class FxInstrument(BacktestInstrument):
