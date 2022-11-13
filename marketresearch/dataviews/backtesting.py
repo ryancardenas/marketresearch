@@ -56,12 +56,19 @@ class BacktestTimeframe(ABC):
         self._connect_to_database()
         self._get_all_datetimes()
         self._timeframe_values = {
-            "M": 30.0,
-            "W": 7.0,
-            "D": 1.0,
-            "H": 1 / 24,
-            "m": 1 / 1440,
+            "M": 28.0 * 10080.0,
+            "W": 10080.0,
+            "D": 1440.0,
+            "H": 60.0,
+            "m": 1.0,
         }
+        self._initialize_timedelta()
+
+    def _initialize_timedelta(self):
+        char = self.name[0]
+        basenum = int(self.name[1:])
+        num = basenum * self._timeframe_values[char]
+        self.timedelta = pd.Timedelta(f"{num}m")
 
     @property
     def start_datetime(self):
