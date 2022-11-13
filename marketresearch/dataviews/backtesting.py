@@ -254,102 +254,6 @@ class BacktestTimeframe(ABC):
         return self._value == obj._value
 
 
-class BacktestInstrument(abmr.AbstractDataFeed):
-    """Abstract class representing a financial instrument data feed. This data feed can be an FX pair,
-    futures contract, stock, option, or any other type of financial instrument."""
-
-    def __init__(
-        self, name: str, parent: BacktestDataView, data_source: abmr.AbstractDataBase
-    ):
-        super().__init__(name=name, parent=parent, data_source=data_source)
-        self._timeframes = {}
-        self._default_timeframe_class = None
-
-    @property
-    def timeframes(self):
-        """Returns a list of the names of each Timeframe belonging to this object."""
-        return list(self._timeframes.keys())
-
-    def _initialize_parent_datetime_boundaries(self):
-        min_dt = pd.to_datetime("1700")
-        max_dt = pd.to_datetime("today")
-        for name in self.timeframes:
-            dt_low = self._timeframes[name]._all_datetimes.min()
-            dt_high = self._timeframes[name]._all_datetimes.max()
-            if dt_low > min_dt:
-                min_dt = dt_low
-            if dt_high < max_dt:
-                max_dt = dt_high
-        self._parent.start_datetime = min_dt
-        self._parent.stop_datetime = max_dt
-
-    @property
-    def smallest_timeframe(self):
-        return min(self._timeframes, key=self._timeframes.get)
-
-    @property
-    def largest_timeframe(self):
-        return max(self._timeframes, key=self._timeframes.get)
-
-    def update(self, args: Optional[dict] = None, propogate: bool = False):
-        """Updates this Instrument and its child Timeframes."""
-        if args is None:
-            args = {}
-        for attr, value in args.items():
-            if not isinstance(attr, str):
-                raise ValueError(
-                    "attr must be a string representing an attribute of the Instrument object"
-                )
-            else:
-                if getattr(self, attr, False) and propogate:
-                    setattr(self, attr, value)
-                    self.update_timeframes(args=args, propogate=True)
-                elif getattr(self, attr, False):
-                    setattr(self, attr, value)
-                elif propogate:
-                    self.update_timeframes(args=args, propogate=True)
-                else:
-                    raise ValueError(
-                        "args must be attribute of this Instrument object or its child Timeframes"
-                    )
-
-    def update_timeframes(self, args: Optional[dict] = None, propogate: bool = False):
-        """Updates all child Timeframes with the specified value at the specified attribute."""
-        for name, obj in self._timeframes.items():
-            obj.update(args=args, propogate=propogate)
-
-    def add_timeframes(self, timeframes: dict):
-        """Creates Timeframe objects with their respective data sources and links them to this object, provided they
-        don't already exist and are not duplicates of each other."""
-        for name, args in timeframes.items():
-            if name in self.timeframes:
-                print(f"Timeframe with name {name} is already linked! Skipping...")
-            else:
-                timeframe = self._default_timeframe_class(
-                    name=name, parent=self, **args
-                )
-                self._timeframes[name] = timeframe
-        for name in self.timeframes:
-            self._timeframes[name]._update_smart_bar_slice()
-        self._initialize_parent_datetime_boundaries()
-
-    def add_indicators(self, indicators: List[Tuple[Type[AbstractIndicator], dict]]):
-        for key in self.timeframes:
-            self._timeframes[key].add_indicators(indicators=indicators)
-
-    def __getitem__(self, item: str):
-        """Allows the Timeframe objects to be accessed by 'MyInstrument[timeframe_name]' notation."""
-        if isinstance(item, str):
-            if item not in self.timeframes:
-                raise KeyError(f"{item} not found")
-            else:
-                return self._timeframes[item]
-        else:
-            raise KeyError(
-                f"key must be a string representing the name of a linked Timeframe"
-            )
-
-
 class FxTimeframe(BacktestTimeframe):
     """A Timeframe object for foreign exchange currency pairs, which have more attributes than an AbstractTimeframe."""
 
@@ -445,6 +349,102 @@ class FxTimeframe(BacktestTimeframe):
             min_tf = self._parent._timeframes[min_tf_name]
             smart_bar = min_tf.datetime[self._smart_bar_slice]
         return np.r_[dataset[self._slice], smart_bar]
+
+
+class BacktestInstrument(abmr.AbstractDataFeed):
+    """Abstract class representing a financial instrument data feed. This data feed can be an FX pair,
+    futures contract, stock, option, or any other type of financial instrument."""
+
+    def __init__(
+        self, name: str, parent: BacktestDataView, data_source: abmr.AbstractDataBase
+    ):
+        super().__init__(name=name, parent=parent, data_source=data_source)
+        self._timeframes = {}
+        self._default_timeframe_class = None
+
+    @property
+    def timeframes(self):
+        """Returns a list of the names of each Timeframe belonging to this object."""
+        return list(self._timeframes.keys())
+
+    def _initialize_parent_datetime_boundaries(self):
+        min_dt = pd.to_datetime("1700")
+        max_dt = pd.to_datetime("today")
+        for name in self.timeframes:
+            dt_low = self._timeframes[name]._all_datetimes.min()
+            dt_high = self._timeframes[name]._all_datetimes.max()
+            if dt_low > min_dt:
+                min_dt = dt_low
+            if dt_high < max_dt:
+                max_dt = dt_high
+        self._parent.start_datetime = min_dt
+        self._parent.stop_datetime = max_dt
+
+    @property
+    def smallest_timeframe(self):
+        return min(self._timeframes, key=self._timeframes.get)
+
+    @property
+    def largest_timeframe(self):
+        return max(self._timeframes, key=self._timeframes.get)
+
+    def update(self, args: Optional[dict] = None, propogate: bool = False):
+        """Updates this Instrument and its child Timeframes."""
+        if args is None:
+            args = {}
+        for attr, value in args.items():
+            if not isinstance(attr, str):
+                raise ValueError(
+                    "attr must be a string representing an attribute of the Instrument object"
+                )
+            else:
+                if getattr(self, attr, False) and propogate:
+                    setattr(self, attr, value)
+                    self.update_timeframes(args=args, propogate=True)
+                elif getattr(self, attr, False):
+                    setattr(self, attr, value)
+                elif propogate:
+                    self.update_timeframes(args=args, propogate=True)
+                else:
+                    raise ValueError(
+                        "args must be attribute of this Instrument object or its child Timeframes"
+                    )
+
+    def update_timeframes(self, args: Optional[dict] = None, propogate: bool = False):
+        """Updates all child Timeframes with the specified value at the specified attribute."""
+        for name, obj in self._timeframes.items():
+            obj.update(args=args, propogate=propogate)
+
+    def add_timeframes(self, timeframes: dict):
+        """Creates Timeframe objects with their respective data sources and links them to this object, provided they
+        don't already exist and are not duplicates of each other."""
+        for name, args in timeframes.items():
+            if name in self.timeframes:
+                print(f"Timeframe with name {name} is already linked! Skipping...")
+            else:
+                timeframe = self._default_timeframe_class(
+                    name=name, parent=self, **args
+                )
+                self._timeframes[name] = timeframe
+        for name in self.timeframes:
+            self._timeframes[name]._update_smart_bar_slice()
+        self._initialize_parent_datetime_boundaries()
+
+    def add_indicators(self, indicators: List[Tuple[Type[AbstractIndicator], dict]]):
+        for key in self.timeframes:
+            self._timeframes[key].add_indicators(indicators=indicators)
+
+    def __getitem__(self, item: str):
+        """Allows the Timeframe objects to be accessed by 'MyInstrument[timeframe_name]' notation."""
+        if isinstance(item, str):
+            if item not in self.timeframes:
+                raise KeyError(f"{item} not found")
+            else:
+                return self._timeframes[item]
+        else:
+            raise KeyError(
+                f"key must be a string representing the name of a linked Timeframe"
+            )
 
 
 class FxInstrument(BacktestInstrument):
