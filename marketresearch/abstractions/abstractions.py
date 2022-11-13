@@ -247,6 +247,7 @@ class AbstractDataFeed(ABC):
         self._data_source = data_source
         self._start_datetime = self._parent.start_datetime
         self._stop_datetime = self._parent.stop_datetime
+        self._connect_to_database()
 
     @property
     def dtype(self):
@@ -261,16 +262,22 @@ class AbstractDataFeed(ABC):
     def stop_datetime(self):
         return self._stop_datetime
 
-    @abstractmethod
     def update(self, args: Optional[dict] = None):
-        """Updates the Instrument, either by assimilating new market data or by incrementing the time step used for
-        accessing data from a DataBase."""
-        pass
+        """Updates this DataFeed and its child DataBase."""
+        if args is None:
+            args = {}
+        for attr, value in args.items():
+            if not isinstance(attr, str):
+                raise ValueError(
+                    "attr must be a string representing an attribute of this object"
+                )
+            else:
+                setattr(self, attr, value)
+        self._data_source.update()
 
-    @abstractmethod
     def _connect_to_database(self):
         """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
-        pass
+        self._data_source.connect()
 
 
 class AbstractInstrument(AbstractDataFeed):
@@ -289,21 +296,18 @@ class AbstractInstrument(AbstractDataFeed):
         """Returns a list of the names of each Timeframe belonging to this object."""
         return list(self._timeframes.keys())
 
-    @abstractmethod
-    def update(self, args: Optional[dict] = None):
-        """Updates the Instrument, either by assimilating new market data or by incrementing the time step used for
-        accessing data from a DataBase."""
-        pass
-
-    @abstractmethod
     def update_timeframes(self, args: Optional[dict] = None):
         """Updates all child Timeframes with the specified value at the specified attribute."""
-        pass
-
-    @abstractmethod
-    def _connect_to_database(self):
-        """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
-        pass
+        if args is None:
+            args = {}
+        for attr, value in args.items():
+            if not isinstance(attr, str):
+                raise ValueError(
+                    "attr must be a string representing an attribute of all child Timeframes"
+                )
+            else:
+                for name, obj in self._timeframes.items():
+                    setattr(obj, attr, value)
 
     def add_timeframes(self, timeframes: dict):
         """Creates Timeframe objects with their respective data sources and links them to this object, provided they
