@@ -236,6 +236,19 @@ class BacktestInstrument(abmr.AbstractDataFeed):
         """Returns a list of the names of each Timeframe belonging to this object."""
         return list(self._timeframes.keys())
 
+    def _initialize_parent_datetime_boundaries(self):
+        min_dt = pd.to_datetime("1700")
+        max_dt = pd.to_datetime("today")
+        for name in self.timeframes:
+            dt_low = self._timeframes[name].datetime.min()
+            dt_high = self._timeframes[name].datetime.max()
+            if dt_low > min_dt:
+                min_dt = dt_low
+            if dt_high < max_dt:
+                max_dt = dt_high
+        self._parent.start_datetime = min_dt
+        self._parent.stop_datetime = max_dt
+
     def update(self, args: Optional[dict] = None, propogate: bool = False):
         """Updates this Instrument and its child Timeframes."""
         if args is None:
@@ -274,6 +287,7 @@ class BacktestInstrument(abmr.AbstractDataFeed):
                     name=name, parent=self, **args
                 )
                 self._timeframes[name] = timeframe
+        self._initialize_parent_datetime_boundaries()
 
     def add_indicators(self, indicators: List[Tuple[Type[AbstractIndicator], dict]]):
         for key in self.timeframes:
