@@ -144,21 +144,36 @@ class AbstractTimeframe(ABC):
     def datetime(self):
         pass
 
-    @abstractmethod
     def update(self, args: Optional[dict] = None):
         """Updates the Timeframe, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
-        pass
+        if args is None:
+            args = {}
+        for attr, value in args.items():
+            if not isinstance(attr, str):
+                raise ValueError(
+                    "attr must be a string representing an attribute of this object"
+                )
+            else:
+                setattr(self, attr, value)
+        self._data_source.update()
 
-    @abstractmethod
     def update_indicators(self, args: Optional[dict] = None):
         """Updates all child Indicators with the specified value at the specified attribute."""
-        pass
+        if args is None:
+            args = {}
+        for attr, value in args.items():
+            if not isinstance(attr, str):
+                raise ValueError(
+                    "attr must be a string representing an attribute of all child Indicators"
+                )
+            else:
+                for name, obj in self._indicators.items():
+                    setattr(obj, attr, value)
 
-    @abstractmethod
     def _connect_to_database(self):
         """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
-        pass
+        self._data_source.connect()
 
     def add_indicators(self, indicators: List[Tuple[Type[AbstractIndicator], dict]]):
         """Creates Indicator objects with their respective data sources and links them to this object, provided they

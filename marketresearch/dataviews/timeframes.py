@@ -8,7 +8,7 @@ Creation Date: 11/8/2022
 Timeframe classes that wrap data typically charted for a financial instrument.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import pandas as pd
 
@@ -23,10 +23,11 @@ class FxTimeframe(abmr.AbstractTimeframe):
         name: str,
         parent: abmr.AbstractInstrument,
         data_source: Optional[abmr.AbstractDataBase] = None,
+        init_slice: slice = slice(0, 0),
     ):
-        super().__init__(name=name, parent=parent, data_source=data_source)
-        self._connect_to_database()
-        self.symbol = self._parent.name
+        super().__init__(
+            name=name, parent=parent, data_source=data_source, init_slice=init_slice
+        )
 
     @property
     def open(self):
@@ -81,19 +82,3 @@ class FxTimeframe(abmr.AbstractTimeframe):
             dataset="timestamp",
         )
         return pd.to_datetime(dataset[self._slice])
-
-    def update(self, attrs: Optional[List] = None, values: Optional[List] = None):
-        if attrs is None:
-            attrs = []
-        if values is None:
-            values = []
-        assert len(attrs) == len(values), "attrs and values must have same length"
-        for attr, value in zip(attrs, values):
-            if attr is None:
-                raise ValueError("attr must not be None")
-            else:
-                setattr(self, attr, value)
-        self._data_source.update()
-
-    def _connect_to_database(self):
-        self._data_source.connect()
