@@ -256,6 +256,14 @@ class BacktestInstrument(abmr.AbstractDataFeed):
         self._parent.start_datetime = min_dt
         self._parent.stop_datetime = max_dt
 
+    @property
+    def smallest_timeframe(self):
+        return min(self._timeframes, key=self._timeframes.get)
+
+    @property
+    def largest_timeframe(self):
+        return max(self._timeframes, key=self._timeframes.get)
+
     def update(self, args: Optional[dict] = None, propogate: bool = False):
         """Updates this Instrument and its child Timeframes."""
         if args is None:
