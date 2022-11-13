@@ -24,11 +24,19 @@ class BacktestDataView(abmr.AbstractDataView):
 
     def __init__(self):
         super().__init__()
+        self._min_datetime = self.start_datetime
+        self._max_datetime = self.stop_datetime
 
     def step_forward(self, timedelta: Union[str, pd.Timedelta]):
         if isinstance(timedelta, str):
             timedelta = pd.Timedelta(timedelta)
-        self.stop_datetime = self.stop_datetime + timedelta
+        new_datetime = self.stop_datetime + timedelta
+        if new_datetime <= self._max_datetime:
+            self.stop_datetime = new_datetime
+            return 1
+        else:
+            print("forward step would exceed max available datetime; ignoring request")
+            return 0
 
 
 @functools.total_ordering
@@ -394,6 +402,10 @@ class BacktestInstrument(abmr.AbstractDataFeed):
             )
             print(f"stop_datetime: {max_dt}")
             self._parent.stop_datetime = max_dt
+        if min_dt > self._parent._min_datetime:
+            self._parent._min_datetime = min_dt
+        if max_dt < self._parent._max_datetime:
+            self._parent._max_datetime = max_dt
 
     @property
     def smallest_timeframe(self):
