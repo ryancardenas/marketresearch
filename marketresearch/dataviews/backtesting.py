@@ -290,7 +290,7 @@ class FxTimeframe(BacktestTimeframe):
         if not self.is_smallest_timeframe:
             min_tf_name = self._parent.smallest_timeframe
             min_tf = self._parent._timeframes[min_tf_name]
-            smart_bar = min_tf.open[self._smart_bar_slice]
+            smart_bar = min_tf.open[self._smart_bar_slice][0]
         return np.r_[dataset[self._slice], smart_bar]
 
     @property
@@ -304,7 +304,7 @@ class FxTimeframe(BacktestTimeframe):
         if not self.is_smallest_timeframe:
             min_tf_name = self._parent.smallest_timeframe
             min_tf = self._parent._timeframes[min_tf_name]
-            smart_bar = min_tf.high[self._smart_bar_slice]
+            smart_bar = min_tf.high[self._smart_bar_slice].max()
         return np.r_[dataset[self._slice], smart_bar]
 
     @property
@@ -318,7 +318,7 @@ class FxTimeframe(BacktestTimeframe):
         if not self.is_smallest_timeframe:
             min_tf_name = self._parent.smallest_timeframe
             min_tf = self._parent._timeframes[min_tf_name]
-            smart_bar = min_tf.low[self._smart_bar_slice]
+            smart_bar = min_tf.low[self._smart_bar_slice].min()
         return np.r_[dataset[self._slice], smart_bar]
 
     @property
@@ -332,7 +332,7 @@ class FxTimeframe(BacktestTimeframe):
         if not self.is_smallest_timeframe:
             min_tf_name = self._parent.smallest_timeframe
             min_tf = self._parent._timeframes[min_tf_name]
-            smart_bar = min_tf.close[self._smart_bar_slice]
+            smart_bar = min_tf.close[self._smart_bar_slice][-1]
         return np.r_[dataset[self._slice], smart_bar]
 
     @property
@@ -346,7 +346,7 @@ class FxTimeframe(BacktestTimeframe):
         if not self.is_smallest_timeframe:
             min_tf_name = self._parent.smallest_timeframe
             min_tf = self._parent._timeframes[min_tf_name]
-            smart_bar = min_tf.volume[self._smart_bar_slice]
+            smart_bar = min_tf.volume[self._smart_bar_slice].sum()
         return np.r_[dataset[self._slice], smart_bar]
 
     @property
@@ -360,7 +360,7 @@ class FxTimeframe(BacktestTimeframe):
         if not self.is_smallest_timeframe:
             min_tf_name = self._parent.smallest_timeframe
             min_tf = self._parent._timeframes[min_tf_name]
-            smart_bar = min_tf.datetime[self._smart_bar_slice]
+            smart_bar = min_tf.datetime[self._smart_bar_slice][-1]
         return np.r_[dataset[self._slice], smart_bar]
 
 
