@@ -456,16 +456,31 @@ class AbstractDataView(ABC):
             raise ValueError("datetime must be either str or pd.Timestamp")
         self.update_feeds(args={"stop_datetime": self._stop_datetime})
 
-    @abstractmethod
     def update(self, args: Optional[dict] = None):
         """Updates the DataView, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
-        pass
+        if args is None:
+            args = {}
+        for attr, value in args.items():
+            if not isinstance(attr, str):
+                raise ValueError(
+                    "attr must be a string representing an attribute of this object"
+                )
+            else:
+                setattr(self, attr, value)
 
-    @abstractmethod
     def update_feeds(self, args: Optional[dict] = None):
         """Updates all child DataFeeds with the specified value at the specified attribute."""
-        pass
+        if args is None:
+            args = {}
+        for attr, value in args.items():
+            if not isinstance(attr, str):
+                raise ValueError(
+                    "attr must be a string representing an attribute of all child DataFeeds"
+                )
+            else:
+                for name, obj in self._feeds.items():
+                    setattr(obj, attr, value)
 
     def add_feeds(self, feeds: List[Tuple[str, Type[AbstractDataFeed], dict]]):
         """Adds a DataFeed to this object, unless another DataFeed with the same name attribute is already linked."""
