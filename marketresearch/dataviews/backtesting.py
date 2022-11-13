@@ -246,13 +246,16 @@ class BacktestInstrument(abmr.AbstractDataFeed):
                     "attr must be a string representing an attribute of the Instrument object"
                 )
             else:
-                if getattr(self, attr, False):
+                if getattr(self, attr, False) and propogate:
+                    setattr(self, attr, value)
+                    self.update_timeframes(args=args, propogate=True)
+                elif getattr(self, attr, False):
                     setattr(self, attr, value)
                 elif propogate:
                     self.update_timeframes(args=args, propogate=True)
                 else:
                     raise ValueError(
-                        "args must be attribute of either this Instrument object or its child Timeframes"
+                        "args must be attribute of this Instrument object or its child Timeframes"
                     )
 
     def update_timeframes(self, args: Optional[dict] = None, propogate: bool = False):

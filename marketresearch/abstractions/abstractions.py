@@ -190,7 +190,10 @@ class AbstractDataView(ABC):
                     "attr must be a string representing an attribute of the DataView object"
                 )
             else:
-                if getattr(self, attr, False):
+                if getattr(self, attr, False) and propogate:
+                    setattr(self, attr, value)
+                    self.update_feeds(args=args, propogate=True)
+                elif getattr(self, attr, False):
                     setattr(self, attr, value)
                 elif propogate:
                     self.update_feeds(args=args, propogate=True)
