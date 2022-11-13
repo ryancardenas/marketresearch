@@ -37,16 +37,13 @@ class SMA(abmr.AbstractIndicator):
         """Updates the Indicator, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
         dataset = self._parent[self.dataset_name]
-        for i in range(dataset.shape[0]):
-            if i < self.n:
-                x = np.nan
-            else:
-                x = np.mean(dataset[-self.n :])
-            self._values.append(x)
+        vals = np.full(shape=dataset.shape[0], fill_value=np.nan)
+        vals[8:] = np.convolve(dataset, np.ones(9) / 9, "valid")
+        self._values = list(vals)
 
     def update(self):
         dataset = self._parent[self.dataset_name]
-        if len(self.values) < self.n:
+        if len(self._values) < self.n:
             x = np.nan
         else:
             x = np.mean(dataset[-self.n :])
