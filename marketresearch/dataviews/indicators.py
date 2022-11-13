@@ -13,15 +13,16 @@ from typing import Optional
 import numpy as np
 
 import marketresearch.abstractions.abstractions as abmr
+import marketresearch.dataviews.backtesting as bt
 
 
-class SMA(abmr.AbstractIndicator):
+class SMA(bt.AbstractIndicator):
     """A Simple Moving Average indicator. Computes average price over the last N bars."""
 
     def __init__(
         self,
         name: str,
-        parent: abmr.AbstractTimeframe,
+        parent: bt.BacktestTimeframe,
         n: int,
         dataset_name: str = "close",
     ):

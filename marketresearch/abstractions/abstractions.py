@@ -10,7 +10,6 @@ Contains abstract classes for marketresearch project.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-import functools
 from pathlib import Path
 from typing import List, Optional, Union, Tuple, Type
 
@@ -50,299 +49,6 @@ class AbstractCandlestickDataBase(AbstractDataBase):
     @abstractmethod
     def retrieve_dataset(self, symbol: str, timeframe: str, dataset: str):
         pass
-
-
-class AbstractIndicator(ABC):
-    """Abstract class representing a function that processes Timeframe data for a single Symbol and returns a value
-    or array of values."""
-
-    def __init__(self, name: str, parent: AbstractTimeframe, dataset_name: str):
-        self.name = name
-        self.dataset_name = dataset_name
-        self._parent = parent
-        self._values = []
-
-    @property
-    @abstractmethod
-    def values(self):
-        pass
-
-    @abstractmethod
-    def _init_compute(self):
-        """Initializes the Indicator with values computed based on all currently available values in the parent's
-        dataset."""
-        pass
-
-    @abstractmethod
-    def update(self):
-        """Updates the Indicator with a single value computed based on the most recent values in the parent's
-        dataset."""
-        pass
-
-
-@functools.total_ordering
-class AbstractTimeframe(ABC):
-    """Abstract class representing the wrapper for data that is typically charted for a financial instrument. A
-    Timeframe stores OHLC, timestamps, volume, and other data for a specific Instrument for a single aggregation
-    period -- 1 Month, 1 Week, 1 Day, 1 Hour, 1 Min, etc. An Instrument may have many different Timeframes,
-    but no more than one for each unique aggregation period."""
-
-    def __init__(
-        self,
-        name: str,
-        parent: AbstractInstrument,
-        data_source: Optional[AbstractCandlestickDataBase] = None,
-        init_slice: slice = slice(0, 0),
-    ):
-        assert name[0] in ["M", "W", "D", "H", "m"]
-        assert 2 <= len(name) <= 3
-        assert 0 < int(name[1:]) < 100
-        self.name = name
-        self._parent = parent
-        if data_source is None:
-            self._data_source = self._parent._data_source
-        else:
-            self._data_source = data_source
-        self._indicators = {}
-        self._protected_names = ["open", "high", "low", "close", "volume", "datetime"]
-        self._connect_to_database()
-        self.symbol = self._parent.name
-        self._slice = init_slice
-        self._timeframe_values = {
-            "M": 30.0,
-            "W": 7.0,
-            "D": 1.0,
-            "H": 1 / 24,
-            "m": 1 / 1440,
-        }
-
-    @property
-    def indicators(self):
-        """Returns a list of the names of each Indicator belonging to this object."""
-        return list(self._indicators.keys())
-
-    @property
-    @abstractmethod
-    def open(self):
-        pass
-
-    @property
-    @abstractmethod
-    def high(self):
-        pass
-
-    @property
-    @abstractmethod
-    def low(self):
-        pass
-
-    @property
-    @abstractmethod
-    def close(self):
-        pass
-
-    @property
-    @abstractmethod
-    def volume(self):
-        pass
-
-    @property
-    @abstractmethod
-    def datetime(self):
-        pass
-
-    def update(self, args: Optional[dict] = None):
-        """Updates the Timeframe, either by assimilating new market data or by incrementing the time step used for
-        accessing data from a DataBase."""
-        if args is None:
-            args = {}
-        for attr, value in args.items():
-            if not isinstance(attr, str):
-                raise ValueError(
-                    "attr must be a string representing an attribute of this object"
-                )
-            else:
-                setattr(self, attr, value)
-        self._data_source.update()
-
-    def update_indicators(self, args: Optional[dict] = None):
-        """Updates all child Indicators with the specified value at the specified attribute."""
-        if args is None:
-            args = {}
-        for attr, value in args.items():
-            if not isinstance(attr, str):
-                raise ValueError(
-                    "attr must be a string representing an attribute of all child Indicators"
-                )
-            else:
-                for name, obj in self._indicators.items():
-                    setattr(obj, attr, value)
-
-    def _connect_to_database(self):
-        """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
-        self._data_source.connect()
-
-    def add_indicators(self, indicators: List[Tuple[Type[AbstractIndicator], dict]]):
-        """Creates Indicator objects with their respective data sources and links them to this object, provided they
-        don't already exist and are not duplicates of each other."""
-        for indicator_class, args in indicators:
-            indicator = indicator_class(parent=self, **args)
-            if indicator.name in self.indicators:
-                print(
-                    f"Indicator with name {indicator.name} is already linked! Skipping..."
-                )
-            elif indicator.name in self._protected_names:
-                print(
-                    f"Indicator name must not be any of {self._protected_names}. Skipping..."
-                )
-            else:
-                self._indicators[indicator.name] = indicator
-
-    def __getitem__(self, item: str):
-        """Allows the Indicator objects to be accessed by 'MyTimeframe[indicator_name]' notation. If the Indicator
-        has a protected name, then call the Timeframe property that the name refers to."""
-        if isinstance(item, str):
-            if item in self.indicators:
-                return self._indicators[item].values
-            elif item in self._protected_names:
-                return getattr(self, item)
-            else:
-                raise KeyError(f"{item} not found")
-        else:
-            raise KeyError(
-                f"key must be a string representing the name of a linked Timeframe"
-            )
-
-    @property
-    def _value(self):
-        """Determines the 'value' of this Timeframe for comparison against other Timeframes."""
-        val = self._timeframe_values[self.name[0]]
-        val *= int(self.name[1:])
-        return val
-
-    def __lt__(self, obj: AbstractTimeframe):
-        """Determines if this Timeframe is 'less than' another Timeframe."""
-        return self._value < obj._value
-
-    def __gt__(self, obj: AbstractTimeframe):
-        """Determines if this Timeframe is 'greater than' another Timeframe."""
-        return self._value > obj._value
-
-    def __le__(self, obj: AbstractTimeframe):
-        """Determines if this Timeframe is 'less than or equal to' another Timeframe."""
-        return self._value <= obj._value
-
-    def __ge__(self, obj: AbstractTimeframe):
-        """Determines if this Timeframe is 'greater than or equal to' another Timeframe."""
-        return self._value >= obj._value
-
-    def __eq__(self, obj: AbstractTimeframe):
-        """Determines if this Timeframe is 'equal to' another Timeframe."""
-        return self._value == obj._value
-
-
-class AbstractDataFeed(ABC):
-    """Abstract class representing a data object that can be interacted with via a DataView. A DataFeed can be a
-    financial instrument, news, account statistics, trade logs, or any other type of information that might be viewed
-    through a DataView."""
-
-    def __init__(
-        self, name: str, parent: AbstractDataView, data_source: AbstractDataBase
-    ):
-        self.name = name
-        self._parent = parent
-        self._data_source = data_source
-        self._start_datetime = self._parent.start_datetime
-        self._stop_datetime = self._parent.stop_datetime
-        self._connect_to_database()
-
-    @property
-    def dtype(self):
-        """Retrieves the data type for this object."""
-        return self.__class__
-
-    @property
-    def start_datetime(self):
-        return self._start_datetime
-
-    @property
-    def stop_datetime(self):
-        return self._stop_datetime
-
-    def update(self, args: Optional[dict] = None):
-        """Updates this DataFeed and its child DataBase."""
-        if args is None:
-            args = {}
-        for attr, value in args.items():
-            if not isinstance(attr, str):
-                raise ValueError(
-                    "attr must be a string representing an attribute of this object"
-                )
-            else:
-                setattr(self, attr, value)
-        self._data_source.update()
-
-    def _connect_to_database(self):
-        """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
-        self._data_source.connect()
-
-
-class AbstractInstrument(AbstractDataFeed):
-    """Abstract class representing a financial instrument data feed. This data feed can be an FX pair,
-    futures contract, stock, option, or any other type of financial instrument."""
-
-    def __init__(
-        self, name: str, parent: AbstractDataView, data_source: AbstractDataBase
-    ):
-        super().__init__(name=name, parent=parent, data_source=data_source)
-        self._timeframes = {}
-        self._default_timeframe_class = None
-
-    @property
-    def timeframes(self):
-        """Returns a list of the names of each Timeframe belonging to this object."""
-        return list(self._timeframes.keys())
-
-    def update_timeframes(self, args: Optional[dict] = None):
-        """Updates all child Timeframes with the specified value at the specified attribute."""
-        if args is None:
-            args = {}
-        for attr, value in args.items():
-            if not isinstance(attr, str):
-                raise ValueError(
-                    "attr must be a string representing an attribute of all child Timeframes"
-                )
-            else:
-                for name, obj in self._timeframes.items():
-                    setattr(obj, attr, value)
-
-    def add_timeframes(self, timeframes: dict):
-        """Creates Timeframe objects with their respective data sources and links them to this object, provided they
-        don't already exist and are not duplicates of each other."""
-        for name, args in timeframes.items():
-            if name in self.timeframes:
-                print(f"Timeframe with name {name} is already linked! Skipping...")
-            else:
-                timeframe = self._default_timeframe_class(
-                    name=name, parent=self, **args
-                )
-                self._timeframes[name] = timeframe
-
-    def add_indicators(self, indicators: List[Tuple[Type[AbstractIndicator], dict]]):
-        for key in self.timeframes:
-            self._timeframes[key].add_indicators(indicators=indicators)
-
-    def __getitem__(self, item: str):
-        """Allows the Timeframe objects to be accessed by 'MyInstrument[timeframe_name]' notation."""
-        if isinstance(item, str):
-            if item not in self.timeframes:
-                raise KeyError(f"{item} not found")
-            else:
-                return self._timeframes[item]
-        else:
-            raise KeyError(
-                f"key must be a string representing the name of a linked Timeframe"
-            )
 
 
 class AbstractAgent(ABC):
@@ -441,12 +147,18 @@ class AbstractDataView(ABC):
     def start_datetime(self, value: Union[str, pd.Timestamp]):
         """Sets the start_datetime for this object and all children DataFeeds."""
         if isinstance(value, str):
-            self._start_datetime = pd.to_datetime(value)
+            start_datetime = pd.to_datetime(value)
         elif isinstance(value, pd.Timestamp):
-            self._start_datetime = value
+            start_datetime = value
         else:
             raise ValueError("datetime must be either str or pd.Timestamp")
-        self.update_feeds(args={"start_datetime": self._start_datetime})
+        assert (
+            start_datetime < self._stop_datetime
+        ), "start_datetime must be less than stop_datetime"
+        self._start_datetime = start_datetime
+        self.update_feeds(
+            args={"_start_datetime": self._start_datetime}, propogate=True
+        )
 
     @property
     def stop_datetime(self):
@@ -456,14 +168,18 @@ class AbstractDataView(ABC):
     def stop_datetime(self, value: Union[str, pd.Timestamp]):
         """Sets the stop_datetime for this object and all children DataFeeds."""
         if isinstance(value, str):
-            self._stop_datetime = pd.to_datetime(value)
+            stop_datetime = pd.to_datetime(value)
         elif isinstance(value, pd.Timestamp):
-            self._stop_datetime = value
+            stop_datetime = value
         else:
             raise ValueError("datetime must be either str or pd.Timestamp")
-        self.update_feeds(args={"stop_datetime": self._stop_datetime})
+        assert (
+            stop_datetime > self._start_datetime
+        ), "stop_datetime must be greater than start_datetime"
+        self._stop_datetime = stop_datetime
+        self.update_feeds(args={"_stop_datetime": self._stop_datetime}, propogate=True)
 
-    def update(self, args: Optional[dict] = None):
+    def update(self, args: Optional[dict] = None, propogate: bool = False):
         """Updates the DataView, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
         if args is None:
@@ -471,23 +187,22 @@ class AbstractDataView(ABC):
         for attr, value in args.items():
             if not isinstance(attr, str):
                 raise ValueError(
-                    "attr must be a string representing an attribute of this object"
+                    "attr must be a string representing an attribute of the DataView object"
                 )
             else:
-                setattr(self, attr, value)
+                if getattr(self, attr, False):
+                    setattr(self, attr, value)
+                elif propogate:
+                    self.update_feeds(args=args, propogate=True)
+                else:
+                    raise ValueError(
+                        "args must be attribute of either this DataView object or its child DataFeeds"
+                    )
 
-    def update_feeds(self, args: Optional[dict] = None):
+    def update_feeds(self, args: Optional[dict] = None, propogate: bool = False):
         """Updates all child DataFeeds with the specified value at the specified attribute."""
-        if args is None:
-            args = {}
-        for attr, value in args.items():
-            if not isinstance(attr, str):
-                raise ValueError(
-                    "attr must be a string representing an attribute of all child DataFeeds"
-                )
-            else:
-                for name, obj in self._feeds.items():
-                    setattr(obj, attr, value)
+        for name, obj in self._feeds.items():
+            obj.update(args=args, propogate=propogate)
 
     def add_feeds(self, feeds: List[Tuple[str, Type[AbstractDataFeed], dict]]):
         """Adds a DataFeed to this object, unless another DataFeed with the same name attribute is already linked."""
@@ -511,3 +226,49 @@ class AbstractDataView(ABC):
             raise KeyError(
                 f"key must be a string representing the name of a linked DataFeed"
             )
+
+
+class AbstractDataFeed(ABC):
+    """Abstract class representing a data object that can be interacted with via a DataView. A DataFeed can be a
+    financial instrument, news, account statistics, trade logs, or any other type of information that might be viewed
+    through a DataView."""
+
+    def __init__(
+        self, name: str, parent: AbstractDataView, data_source: AbstractDataBase
+    ):
+        self.name = name
+        self._parent = parent
+        self._data_source = data_source
+        self._start_datetime = self._parent.start_datetime
+        self._stop_datetime = self._parent.stop_datetime
+        self._connect_to_database()
+
+    @property
+    def dtype(self):
+        """Retrieves the data type for this object."""
+        return self.__class__
+
+    @property
+    def start_datetime(self):
+        return self._start_datetime
+
+    @property
+    def stop_datetime(self):
+        return self._stop_datetime
+
+    @abstractmethod
+    def update(self, args: Optional[dict] = None, propogate: bool = False):
+        """Updates this DataFeed and its child DataBase."""
+        if args is None:
+            args = {}
+        for attr, value in args.items():
+            if not isinstance(attr, str):
+                raise ValueError(
+                    "attr must be a string representing an attribute of this object"
+                )
+            else:
+                setattr(self, attr, value)
+
+    def _connect_to_database(self):
+        """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
+        self._data_source.connect()
