@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 import functools
-from typing import List, Optional, Tuple, Type
+from typing import List, Optional, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
@@ -24,6 +24,11 @@ class BacktestDataView(abmr.AbstractDataView):
 
     def __init__(self):
         super().__init__()
+
+    def step_forward(self, timedelta: Union[str, pd.Timedelta]):
+        if isinstance(timedelta, str):
+            timedelta = pd.Timedelta(timedelta)
+        self.stop_datetime = self.stop_datetime + timedelta
 
 
 @functools.total_ordering
@@ -377,8 +382,18 @@ class BacktestInstrument(abmr.AbstractDataFeed):
                 min_dt = dt_low
             if dt_high < max_dt:
                 max_dt = dt_high
-        self._parent.start_datetime = min_dt
-        self._parent.stop_datetime = max_dt
+        if min_dt > self._parent.start_datetime:
+            print(
+                f"Based on available data, start datetime has been modified to the following:"
+            )
+            print(f"start_datetime: {min_dt}")
+            self._parent.start_datetime = min_dt
+        if max_dt < self._parent.stop_datetime:
+            print(
+                f"Based on available data, stop datetime have been modified to the following:"
+            )
+            print(f"stop_datetime: {max_dt}")
+            self._parent.stop_datetime = max_dt
 
     @property
     def smallest_timeframe(self):
