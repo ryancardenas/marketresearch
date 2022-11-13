@@ -39,7 +39,7 @@ class AbstractDataBase(ABC):
         pass
 
     @abstractmethod
-    def update(self):
+    def update(self, args: Optional[dict] = None):
         """Updates the DataBase by saving new market data to disk."""
         pass
 
@@ -145,7 +145,7 @@ class AbstractTimeframe(ABC):
         pass
 
     @abstractmethod
-    def update(self):
+    def update(self, args: Optional[dict] = None):
         """Updates the Timeframe, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
         pass
@@ -224,17 +224,30 @@ class AbstractDataFeed(ABC):
     financial instrument, news, account statistics, trade logs, or any other type of information that might be viewed
     through a DataView."""
 
-    def __init__(self, name: str, data_source: AbstractDataBase):
+    def __init__(
+        self, name: str, parent: AbstractDataView, data_source: AbstractDataBase
+    ):
         self.name = name
+        self._parent = parent
         self._data_source = data_source
+        self._start_datetime = self._parent.start_datetime
+        self._stop_datetime = self._parent.stop_datetime
 
     @property
     def dtype(self):
         """Retrieves the data type for this object."""
         return self.__class__
 
+    @property
+    def start_datetime(self):
+        return self._start_datetime
+
+    @property
+    def stop_datetime(self):
+        return self._stop_datetime
+
     @abstractmethod
-    def update(self):
+    def update(self, args: Optional[dict] = None):
         """Updates the Instrument, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
         pass
@@ -249,8 +262,10 @@ class AbstractInstrument(AbstractDataFeed):
     """Abstract class representing a financial instrument data feed. This data feed can be an FX pair,
     futures contract, stock, option, or any other type of financial instrument."""
 
-    def __init__(self, name: str, data_source: AbstractDataBase):
-        super().__init__(name=name, data_source=data_source)
+    def __init__(
+        self, name: str, parent: AbstractDataView, data_source: AbstractDataBase
+    ):
+        super().__init__(name=name, parent=parent, data_source=data_source)
         self._timeframes = {}
         self._default_timeframe_class = None
 
@@ -275,12 +290,12 @@ class AbstractInstrument(AbstractDataFeed):
         """Calls the linked DataBase's connect() method and performs any other setup operations needed."""
         pass
 
-    def add_timeframe(self, timeframes: dict):
+    def add_timeframes(self, timeframes: dict):
         """Creates Timeframe objects with their respective data sources and links them to this object, provided they
         don't already exist and are not duplicates of each other."""
         for name, args in timeframes.items():
             if name in self.timeframes:
-                print(f"DataFeed with name {name} is already linked! Skipping...")
+                print(f"Timeframe with name {name} is already linked! Skipping...")
             else:
                 timeframe = self._default_timeframe_class(
                     name=name, parent=self, **args
@@ -384,16 +399,46 @@ class AbstractDataView(ABC):
 
     def __init__(self):
         self._feeds = {}
-        self.start_datetime = pd.to_datetime("1900")
-        self.stop_datetime = pd.to_datetime("today")
+        self._start_datetime = pd.to_datetime("1900")
+        self._stop_datetime = pd.to_datetime("today")
 
     @property
     def feeds(self):
         """Returns a list of the names of each DataFeed belonging to this object."""
         return list(self._feeds.keys())
 
+    @property
+    def start_datetime(self):
+        return self._start_datetime
+
+    @start_datetime.setter
+    def start_datetime(self, value: Union[str, pd.Timestamp]):
+        """Sets the start_datetime for this object and all children DataFeeds."""
+        if isinstance(value, str):
+            self._start_datetime = pd.to_datetime(value)
+        elif isinstance(value, pd.Timestamp):
+            self._start_datetime = value
+        else:
+            raise ValueError("datetime must be either str or pd.Timestamp")
+        self.update_feeds(args={"start_datetime": self._start_datetime})
+
+    @property
+    def stop_datetime(self):
+        return self._stop_datetime
+
+    @stop_datetime.setter
+    def stop_datetime(self, value: Union[str, pd.Timestamp]):
+        """Sets the stop_datetime for this object and all children DataFeeds."""
+        if isinstance(value, str):
+            self._stop_datetime = pd.to_datetime(value)
+        elif isinstance(value, pd.Timestamp):
+            self._stop_datetime = value
+        else:
+            raise ValueError("datetime must be either str or pd.Timestamp")
+        self.update_feeds(args={"stop_datetime": self._stop_datetime})
+
     @abstractmethod
-    def update(self):
+    def update(self, args: Optional[dict] = None):
         """Updates the DataView, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
         pass
@@ -403,16 +448,16 @@ class AbstractDataView(ABC):
         """Updates all child DataFeeds with the specified value at the specified attribute."""
         pass
 
-    def add_feed(self, feeds: Union[AbstractDataFeed, List[AbstractDataFeed]]):
+    def add_feeds(self, feeds: List[Tuple[str, Type[AbstractDataFeed], dict]]):
         """Adds a DataFeed to this object, unless another DataFeed with the same name attribute is already linked."""
-        if not isinstance(feeds, List):
-            feeds = [feeds]
-
-        for feed in feeds:
-            if feed.name in self.feeds:
-                print(f"DataFeed with name {feed.name} is already linked! Skipping...")
+        for class_type, args in feeds:
+            assert "name" in args.keys(), "'name' must be defined for each DataFeed"
+            name = args["name"]
+            if name in self.feeds:
+                print(f"DataFeed with name {name} is already linked! Skipping...")
             else:
-                self._feeds[feed.name] = feed
+                feed = class_type(parent=self, **args)
+                self._feeds[name] = feed
 
     def __getitem__(self, item: str):
         """Allows the DataFeed objects to be accessed by 'MyDataView[feed_name]' notation."""
