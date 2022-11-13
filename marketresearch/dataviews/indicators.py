@@ -19,34 +19,35 @@ class SMA(abmr.AbstractIndicator):
     """A Simple Moving Average indicator. Computes average price over the last N bars."""
 
     def __init__(
-        self, name: str, parent: abmr.AbstractTimeframe, n: int, dataset: str = "close"
+        self,
+        name: str,
+        parent: abmr.AbstractTimeframe,
+        n: int,
+        dataset_name: str = "close",
     ):
-        super().__init__(name=name, parent=parent)
+        super().__init__(name=name, parent=parent, dataset_name=dataset_name)
         self.n = n
-        self.dataset = dataset
+        self._init_compute()
 
     @property
     def values(self):
         return np.array(self._values)
 
-    def compute(self):
+    def _init_compute(self):
         """Updates the Indicator, either by assimilating new market data or by incrementing the time step used for
         accessing data from a DataBase."""
-        dataset = self._parent[self.dataset]
-        if dataset.shape[0] < self.n:
+        dataset = self._parent[self.dataset_name]
+        for i in range(dataset.shape[0]):
+            if i < self.n:
+                x = np.nan
+            else:
+                x = np.mean(dataset[-self.n :])
+            self._values.append(x)
+
+    def update(self):
+        dataset = self._parent[self.dataset_name]
+        if len(self.values) < self.n:
             x = np.nan
         else:
             x = np.mean(dataset[-self.n :])
         self._values.append(x)
-
-    def update(self, args: Optional[dict] = None):
-        if args is None:
-            args = {}
-        for attr, value in args.items():
-            if not isinstance(attr, str):
-                raise ValueError(
-                    "attr must be a string representing an attribute of this object"
-                )
-            else:
-                setattr(self, attr, value)
-        self._data_source.update()

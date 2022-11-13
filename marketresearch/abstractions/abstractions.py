@@ -56,8 +56,9 @@ class AbstractIndicator(ABC):
     """Abstract class representing a function that processes Timeframe data for a single Symbol and returns a value
     or array of values."""
 
-    def __init__(self, name: str, parent: AbstractTimeframe):
+    def __init__(self, name: str, parent: AbstractTimeframe, dataset_name: str):
         self.name = name
+        self.dataset_name = dataset_name
         self._parent = parent
         self._values = []
 
@@ -67,9 +68,15 @@ class AbstractIndicator(ABC):
         pass
 
     @abstractmethod
-    def update(self, args: Optional[dict] = None):
-        """Updates the Indicator, either by assimilating new market data or by incrementing the time step used for
-        accessing data from a DataBase."""
+    def _init_compute(self):
+        """Initializes the Indicator with values computed based on all currently available values in the parent's
+        dataset."""
+        pass
+
+    @abstractmethod
+    def update(self):
+        """Updates the Indicator with a single value computed based on the most recent values in the parent's
+        dataset."""
         pass
 
 
