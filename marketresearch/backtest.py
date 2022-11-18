@@ -26,13 +26,19 @@ class BacktestTrade:
     and that are completed."""
 
     def __init__(
-        self, entry: float, stop: float, target: float, time_placed: pd.Timestamp
+        self,
+        entry: float,
+        stop: float,
+        target: float,
+        volume: int,
+        time_placed: pd.Timestamp,
     ):
         self.entry = entry
         self.stop = stop
         self.target = target
-        self.position = "bull" if entry > stop else "bear"
+        self.volume = volume
         self.time_placed = time_placed
+        self.position = "bull" if entry > stop else "bear"
         self.status = "placed"
         self.exit_fill = None
         self.exit_time = None
@@ -84,7 +90,10 @@ class TradeLogic:
     def __init__(self, parent: BacktestAgent):
         self.parent = parent
         self.parent.trade_logic = self
-        self.bar = None
+        self.trade_cooldown = None
+        self.last_trade_time = pd.Timestamp("1800")
+        self.position = None
+        self.volume = 0
 
     def execute_trade_logic(self):
         pass
@@ -116,13 +125,15 @@ class BacktestAgent:
         self.active_trades = []
         self.completed_trades = []
         self.trade_logic = None
+        self.current_set_name = None
 
-    def data(self, timeframe, set_name):
-        t0, tf = self.datasets[set_name]
+    def data(self, timeframe):
+        t0, tf = self.datasets[self.current_set_name]
         df = self._data[timeframe]
         return df[(df["datetime"] < tf) & (df["datetime"] < self.datetime)]
 
     def begin_backtest(self, dataset: str):
+        self.current_set_name = dataset
         self.active_dataset = self.datasets[dataset]
         self.datetime = self.active_dataset[0]
         while self.datetime < self.active_dataset[-1]:
