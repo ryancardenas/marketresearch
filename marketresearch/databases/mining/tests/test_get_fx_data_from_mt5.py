@@ -17,10 +17,10 @@ import MetaTrader5 as mt5
 import numpy as np
 import pandas as pd
 
-import marketresearch.data.mining.get_fx_data_from_mt5 as fxd
+import marketresearch.databases.mining.get_fx_data_from_mt5 as fxd
 from marketresearch.utils import PROJECT_ROOT_DIRECTORY
 
-TESTDIR = PROJECT_ROOT_DIRECTORY / "marketresearch\\data\\mining\\tests\\"
+TESTDIR = PROJECT_ROOT_DIRECTORY / "marketresearch\\databases\\mining\\tests\\"
 
 
 class Test_read_csv_to_dataframe:
