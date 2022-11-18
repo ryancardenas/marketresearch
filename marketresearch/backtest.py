@@ -9,6 +9,8 @@ Code for backtesting strategies using data in fx_data.hdf5.
 """
 from __future__ import annotations
 
+import time
+
 import numpy as np
 import pandas as pd
 
@@ -132,15 +134,29 @@ class BacktestAgent:
         df = self._data[timeframe]
         return df[(df["datetime"] < tf) & (df["datetime"] < self.datetime)]
 
-    def begin_backtest(self, dataset: str):
+    def begin_backtest(
+        self, dataset: str, display_delta: pd.Timedelta = pd.Timedelta("1day")
+    ):
+        print(f"BEGINNING BACKTEST FOR DATASET: {dataset}")
         self.current_set_name = dataset
         self.active_dataset = self.datasets[dataset]
         self.datetime = self.active_dataset[0]
+        previous = self.datetime
+        start_time = time.time()
         while self.datetime < self.active_dataset[-1]:
             self.trade_logic.execute_trade_logic()
             self.process_placed_trades()
             self.process_active_trades()
             self.step_forward()
+            if self.datetime >= previous + display_delta:
+                stop_time = time.time()
+                print(
+                    f"Backtested up to {self.datetime} / {self.active_dataset[-1]}"
+                    f"    ({stop_time-start_time:.2f} [s])"
+                )
+                previous = self.datetime
+                start_time = time.time()
+        print(f"BACKTESTING COMPLETE FOR DATASET: {dataset}")
 
     def get_datasets(self):
         a = self.start_datetime
