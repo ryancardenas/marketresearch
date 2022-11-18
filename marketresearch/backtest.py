@@ -84,6 +84,7 @@ class TradeLogic:
     def __init__(self, parent: BacktestAgent):
         self.parent = parent
         self.parent.trade_logic = self
+        self.bar = None
 
     def execute_trade_logic(self):
         pass
@@ -126,6 +127,8 @@ class BacktestAgent:
         self.datetime = self.active_dataset[0]
         while self.datetime < self.active_dataset[-1]:
             self.trade_logic.execute_trade_logic()
+            self.process_placed_trades()
+            self.process_active_trades()
             self.step_forward()
 
     def get_datasets(self):
@@ -146,3 +149,25 @@ class BacktestAgent:
 
     def step_forward(self):
         self.datetime += self.timestep
+
+    def process_placed_trades(self):
+        bar = self._data[self.periods[0]].iloc[-1]
+        for trade in self.placed_trades:
+            if trade.status == "placed":
+                trade.update(bar)
+
+        placed = [t for t in self.placed_trades if t.status == "placed"]
+        active = [t for t in self.placed_trades if t.status == "active"]
+        self.placed_trades = placed
+        self.active_trades = self.active_trades + active
+
+    def process_active_trades(self):
+        bar = self._data[self.periods[0]].iloc[-1]
+        for trade in self.active_trades:
+            if trade.status == "active":
+                trade.update(bar)
+
+        active = [t for t in self.placed_trades if t.status == "active"]
+        completed = [t for t in self.placed_trades if t.status == "completed"]
+        self.active_trades = active
+        self.completed_trades = self.completed_trades + completed
