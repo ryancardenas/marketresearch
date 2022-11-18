@@ -34,8 +34,10 @@ class BacktestTrade:
         self.position = "bull" if entry > stop else "bear"
         self.time_placed = time_placed
         self.status = "placed"
-        self.exit = None
+        self.exit_fill = None
+        self.exit_time = None
         self.entry_fill = None
+        self.entry_time = None
 
     def update(self, data: pd.Series):
         assert (
@@ -50,28 +52,30 @@ class BacktestTrade:
                     self.entry_fill = self.entry
             if self.entry_fill is not None:
                 self.status = "active"
+                self.entry_time = data["datetime"]
 
         if self.status == "active":
             if self.entry > self.stop:
                 if data["open"] <= self.stop:
-                    self.exit = self.stop
+                    self.exit_fill = self.stop
                 elif data["open"] >= self.target:
-                    self.exit = self.target
+                    self.exit_fill = self.target
                 elif data["low"] <= self.stop:
-                    self.exit = self.stop
+                    self.exit_fill = self.stop
                 elif data["high"] >= self.target:
-                    self.exit = self.target
+                    self.exit_fill = self.target
             elif self.entry < self.stop:
                 if data["open"] >= self.stop:
-                    self.exit = self.stop
+                    self.exit_fill = self.stop
                 elif data["open"] <= self.target:
-                    self.exit = self.target
+                    self.exit_fill = self.target
                 elif data["high"] >= self.stop:
-                    self.exit = self.stop
+                    self.exit_fill = self.stop
                 elif data["low"] <= self.target:
-                    self.exit = self.target
-            if self.exit is not None:
+                    self.exit_fill = self.target
+            if self.exit_fill is not None:
                 self.status = "completed"
+                self.exit_time = data["datetime"]
 
 
 class TradeLogic:
@@ -96,7 +100,7 @@ class BacktestAgent:
         train_ratio: float,
         num_validation_sets: int,
     ):
-        self.data = data
+        self._data = data
         self.periods = sorted_periods
         self.train_ratio = train_ratio
         self.num_validation_sets = num_validation_sets
@@ -111,6 +115,11 @@ class BacktestAgent:
         self.active_trades = []
         self.completed_trades = []
         self.trade_logic = None
+
+    def data(self, timeframe, set_name):
+        t0, tf = self.datasets[set_name]
+        df = self._data[timeframe]
+        return df[(df["datetime"] < tf) & (df["datetime"] < self.datetime)]
 
     def begin_backtest(self, dataset: str):
         self.active_dataset = self.datasets[dataset]
@@ -132,7 +141,7 @@ class BacktestAgent:
         return datasets
 
     def get_timestep(self):
-        datetimes = self.data[self.periods[0]]["datetime"]
+        datetimes = self._data[self.periods[0]]["datetime"]
         return datetimes.diff().min()
 
     def step_forward(self):
