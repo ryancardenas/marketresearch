@@ -159,6 +159,16 @@ class TradeLogic:
         self.volume = 0
 
     def execute_trade_logic(self):
+        p = self.parent
+        if p.datetime >= (p.last_trade_time + self.trade_cooldown):
+            if self.check_entry_conditions():
+                p.last_trade_time = p.datetime
+                self.place_trade()
+
+    def check_entry_conditions(self):
+        pass
+
+    def place_trade(self):
         pass
 
 
