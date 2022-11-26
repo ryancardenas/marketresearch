@@ -45,6 +45,26 @@ def prepare_data(
                     .reset_index()
                 )
                 tf = tf[tf["close"].notna()].reset_index(drop=True)
+            elif period in ["H6", "H8", "H12"]:
+                num_hr = period[1:]
+                for dset in symbol_grp["H1"].keys():
+                    tf[dset] = symbol_grp["H1"][dset][:]
+                tf = pd.DataFrame(tf)
+                tf["datetime"] = tf["timestamp"].astype("datetime64[ns]")
+                tf = (
+                    tf.resample(f"{num_hr}h", on="datetime")
+                    .agg(
+                        {
+                            "open": "first",
+                            "high": "max",
+                            "low": "min",
+                            "close": "last",
+                            "tickvol": "sum",
+                        }
+                    )
+                    .reset_index()
+                )
+                tf = tf[tf["close"].notna()].reset_index(drop=True)
             else:
                 for dset in symbol_grp[period].keys():
                     tf[dset] = symbol_grp[period][dset][:]
@@ -97,14 +117,11 @@ class BacktestTrade:
         self.outcome_amount = None
 
     def update(self, data: pd.Series):
-        # assert (
-        #     data["datetime"] >= self.time_placed
-        # ), "update(timestamp) must be called at or after the time this trade was placed"
         if self.status == "placed":
-            if self.entry > self.stop:
+            if self.entry > self.stop:  # bullish
                 if data["high"] >= self.entry:
                     self.entry_fill = self.entry
-            elif self.entry < self.stop:
+            elif self.entry < self.stop:  # bearish
                 if data["low"] <= self.entry:
                     self.entry_fill = self.entry
             if self.entry_fill is not None:
@@ -273,7 +290,7 @@ class BacktestAgent:
             "train": (a, end_test),
         }
         for n in range(self.num_validation_sets):
-            datasets[f"val{n}"] = (end_test + n * dt, end_test + (n + 1) * dt)
+            datasets[f"val{n+1}"] = (end_test + n * dt, end_test + (n + 1) * dt)
         return datasets
 
     def get_timestep(self):
