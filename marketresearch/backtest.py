@@ -261,7 +261,7 @@ class BacktestAgent:
         avgr = r.mean()
         totr = r.sum()
         print(
-            f"WR:{wr},  R_mean:{avgr},  R_tot:{totr},  N_trades:{len(self.completed_trades)}"
+            f"WR:{wr:.3f},  R_mean:{avgr:.2f},  R_tot:{totr:.2f},  N_trades:{len(self.completed_trades)}"
         )
 
     def get_datasets(self):
@@ -286,7 +286,7 @@ class BacktestAgent:
             df = self._data[period]
             slc = self._slices[period]
             new_stop = slc.stop + 1
-            if df.iloc[new_stop]["datetime"] < self.datetime:
+            if df.iloc[new_stop]["datetime"] <= self.datetime:
                 self._slices[period] = slice(0, new_stop)
 
     def process_placed_trades(self):
