@@ -15,14 +15,6 @@ import numpy as np
 import pandas as pd
 
 
-def get_datetime_bounds(data, periods):
-    first_idx = data[periods[0]].apply(pd.Series.first_valid_index).max()
-    first_dt = data[periods[0]]["datetime"].iloc[first_idx]
-    last_idx = data[periods[0]].apply(pd.Series.last_valid_index).min()
-    last_dt = data[periods[0]]["datetime"].iloc[last_idx]
-    return first_dt, last_dt
-
-
 class BacktestTrade:
     """Class representing trades. Allows for keeping track of trades that have been placed, that are active,
     and that are completed."""
@@ -133,7 +125,7 @@ class BacktestAgent:
         self.periods = sorted_periods
         self.train_ratio = train_ratio
         self.num_validation_sets = num_validation_sets
-        self.start_datetime, self.stop_datetime = get_datetime_bounds(
+        self.start_datetime, self.stop_datetime = self.get_datetime_bounds(
             data, sorted_periods
         )
         self.datasets = self.get_datasets()
@@ -147,6 +139,14 @@ class BacktestAgent:
         self.trade_logic = None
         self.current_set_name = None
         self._slices = {}
+
+    @staticmethod
+    def get_datetime_bounds(data, sorted_periods):
+        first_idx = data[sorted_periods[0]].apply(pd.Series.first_valid_index).max()
+        first_dt = data[sorted_periods[0]]["datetime"].iloc[first_idx]
+        last_idx = data[sorted_periods[0]].apply(pd.Series.last_valid_index).min()
+        last_dt = data[sorted_periods[0]]["datetime"].iloc[last_idx]
+        return first_dt, last_dt
 
     def data(self, period):
         slc = self._slices[period]
