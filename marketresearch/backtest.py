@@ -48,6 +48,9 @@ class BacktestTrade:
         self.exit_time = None
         self.entry_fill = None
         self.entry_time = None
+        self.is_win = None
+        self.outcome_r = None
+        self.outcome_amount = None
 
     def update(self, data: pd.Series):
         # assert (
@@ -65,27 +68,40 @@ class BacktestTrade:
                 self.entry_time = data["datetime"]
 
         if self.status == "active":
-            if self.entry > self.stop:
+            if self.entry > self.stop:  # bullish
                 if data["open"] <= self.stop:
                     self.exit_fill = self.stop
+                    self.is_win = 0
                 elif data["open"] >= self.target:
                     self.exit_fill = self.target
+                    self.is_win = 1
                 elif data["low"] <= self.stop:
                     self.exit_fill = self.stop
+                    self.is_win = 0
                 elif data["high"] >= self.target:
                     self.exit_fill = self.target
-            elif self.entry < self.stop:
+                    self.is_win = 1
+            elif self.entry < self.stop:  # bearish
                 if data["open"] >= self.stop:
                     self.exit_fill = self.stop
+                    self.is_win = 0
                 elif data["open"] <= self.target:
                     self.exit_fill = self.target
+                    self.is_win = 1
                 elif data["high"] >= self.stop:
                     self.exit_fill = self.stop
+                    self.is_win = 0
                 elif data["low"] <= self.target:
                     self.exit_fill = self.target
+                    self.is_win = 1
             if self.exit_fill is not None:
                 self.status = "completed"
                 self.exit_time = data["datetime"]
+                risk = abs(self.entry - self.stop)
+                win = self.is_win * abs(self.target - self.entry)
+                loss = (1 - self.is_win) * risk
+                self.outcome_amount = win - loss
+                self.outcome_r = self.outcome_amount / risk
 
 
 class TradeLogic:
