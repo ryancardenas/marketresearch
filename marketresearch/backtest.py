@@ -93,7 +93,6 @@ class TradeLogic:
         self.parent = parent
         self.parent.trade_logic = self
         self.trade_cooldown = None
-        self.last_trade_time = pd.Timestamp("1800")
         self.position = None
         self.volume = 0
 
@@ -123,6 +122,7 @@ class BacktestAgent:
         self.timestep = self.get_timestep()
         self.active_dataset = None
         self.datetime = None
+        self.last_trade_time = pd.Timestamp("1800")
         self.placed_trades = []
         self.active_trades = []
         self.completed_trades = []
