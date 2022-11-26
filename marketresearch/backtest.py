@@ -34,12 +34,14 @@ class BacktestTrade:
         target: float,
         volume: int,
         time_placed: pd.Timestamp,
+        trade_timeout: pd.Timedelta,
     ):
         self.entry = entry
         self.stop = stop
         self.target = target
         self.volume = volume
         self.time_placed = time_placed
+        self.trade_timeout = time_placed + trade_timeout
         self.position = "bull" if entry > stop else "bear"
         self.status = "placed"
         self.exit_fill = None
@@ -120,7 +122,7 @@ class BacktestAgent:
         )
         self.datasets = self.get_datasets()
         self.timestep = self.get_timestep()
-        self.active_dataset = None
+        self.active_dataset_datetime_boundaries = None
         self.datetime = None
         self.last_trade_time = pd.Timestamp("1800")
         self.placed_trades = []
@@ -139,31 +141,37 @@ class BacktestAgent:
     ):
         print(f"BEGINNING BACKTEST FOR DATASET: {dataset}")
         self.current_set_name = dataset
-        self.active_dataset = self.datasets[dataset]
-        self.datetime = self.active_dataset[0]
+        self.active_dataset_datetime_boundaries = self.datasets[dataset]
+        self.datetime = self.active_dataset_datetime_boundaries[0]
         previous = self.datetime
         start_time = time.time()
         num_trades = 0
-        while self.datetime < self.active_dataset[-1]:
+        while self.datetime < self.active_dataset_datetime_boundaries[-1]:
             self.trade_logic.execute_trade_logic()
             self.process_placed_trades()
             self.process_active_trades()
             self.step_forward()
             if self.datetime >= previous + display_delta:
-                stop_time = time.time()
-                num_trades = (
-                    len(self.placed_trades)
-                    + len(self.active_trades)
-                    + len(self.completed_trades)
-                    - num_trades
-                )
-                print(
-                    f"Backtested up to {self.datetime} / {self.active_dataset[-1]}"
-                    f"    {num_trades} new trades placed    ({stop_time-start_time:.2f} [s])"
+                num_trades = self.display_backtest_progress(
+                    start_time=start_time, num_trades=num_trades
                 )
                 previous = self.datetime
                 start_time = time.time()
         print(f"BACKTESTING COMPLETE FOR DATASET: {dataset}")
+
+    def display_backtest_progress(self, start_time, num_trades):
+        stop_time = time.time()
+        num_trades = (
+            len(self.placed_trades)
+            + len(self.active_trades)
+            + len(self.completed_trades)
+            - num_trades
+        )
+        print(
+            f"Backtested up to {self.datetime} / {self.active_dataset_datetime_boundaries[-1]}"
+            f"    {num_trades} new trades placed    ({stop_time - start_time:.2f} [s])"
+        )
+        return num_trades
 
     def get_datasets(self):
         a = self.start_datetime
@@ -186,9 +194,15 @@ class BacktestAgent:
 
     def process_placed_trades(self):
         bar = self._data[self.periods[0]].iloc[-1]
-        for trade in self.placed_trades:
-            if trade.status == "placed":
+        pop_nums = []
+        for i, trade in enumerate(self.placed_trades):
+            if bar["datetime"] >= trade.trade_timeout:
+                pop_nums.append(i)
+            elif trade.status == "placed":
                 trade.update(bar)
+
+        for i in sorted(pop_nums, reverse=True):
+            self.placed_trades.pop(i)
 
         placed = [t for t in self.placed_trades if t.status == "placed"]
         active = [t for t in self.placed_trades if t.status == "active"]
