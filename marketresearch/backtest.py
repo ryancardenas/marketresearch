@@ -243,6 +243,7 @@ class BacktestAgent:
                 previous = self.datetime
                 start_time = time.time()
         print(f"BACKTESTING COMPLETE FOR DATASET: {dataset}")
+        self.summarize_stats()
 
     def display_backtest_progress(self, start_time):
         stop_time = time.time()
@@ -252,6 +253,15 @@ class BacktestAgent:
         print(
             f"Backtested up to {self.datetime} / {self.active_dataset_datetime_boundaries[-1]}"
             f"    placed:{nplaced + na + nc}  active:{na}  completed:{nc}    ({stop_time - start_time:.2f} [s])"
+        )
+
+    def summarize_stats(self):
+        wr = np.array([t.is_win for t in self.completed_trades]).mean()
+        r = np.array([t.outcome_r for t in self.completed_trades])
+        avgr = r.mean()
+        totr = r.sum()
+        print(
+            f"WR:{wr},  R_mean:{avgr},  R_tot:{totr},  N_trades:{len(self.completed_trades)}"
         )
 
     def get_datasets(self):
