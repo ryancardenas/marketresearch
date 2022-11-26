@@ -146,11 +146,20 @@ class BacktestAgent:
         self.completed_trades = []
         self.trade_logic = None
         self.current_set_name = None
+        self._slices = {}
 
-    def data(self, timeframe):
+    def data(self, period):
+        slc = self._slices[period]
+        return self._data[period].iloc[slc]
+
+    def init_slices(self):
         t0, tf = self.datasets[self.current_set_name]
-        df = self._data[timeframe]
-        return df[(df["datetime"] < tf) & (df["datetime"] < self.datetime)]
+        for period in self.periods:
+            df = self._data[period]
+            stop = df[(df["datetime"] < tf) & (df["datetime"] < self.datetime)].index[
+                -1
+            ]
+            self._slices[period] = slice(0, stop)
 
     def begin_backtest(
         self, dataset: str, display_delta: pd.Timedelta = pd.Timedelta("1day")
@@ -159,6 +168,7 @@ class BacktestAgent:
         self.current_set_name = dataset
         self.active_dataset_datetime_boundaries = self.datasets[dataset]
         self.datetime = self.active_dataset_datetime_boundaries[0]
+        self.init_slices()
         previous = self.datetime
         start_time = time.time()
         while self.datetime < self.active_dataset_datetime_boundaries[-1]:
@@ -200,6 +210,12 @@ class BacktestAgent:
 
     def step_forward(self):
         self.datetime += self.timestep
+        for period in self.periods:
+            df = self._data[period]
+            slc = self._slices[period]
+            new_stop = slc.stop + 1
+            if df.iloc[new_stop]["datetime"] < self.datetime:
+                self._slices[period] = slice(0, new_stop)
 
     def process_placed_trades(self):
         bar = self.data(self.periods[0]).iloc[-1]
