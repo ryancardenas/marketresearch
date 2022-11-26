@@ -50,9 +50,9 @@ class BacktestTrade:
         self.entry_time = None
 
     def update(self, data: pd.Series):
-        assert (
-            data["datetime"] >= self.time_placed
-        ), "update(timestamp) must be called at or after the time this trade was placed"
+        # assert (
+        #     data["datetime"] >= self.time_placed
+        # ), "update(timestamp) must be called at or after the time this trade was placed"
         if self.status == "placed":
             if self.entry > self.stop:
                 if data["high"] >= self.entry:
@@ -145,33 +145,26 @@ class BacktestAgent:
         self.datetime = self.active_dataset_datetime_boundaries[0]
         previous = self.datetime
         start_time = time.time()
-        num_trades = 0
         while self.datetime < self.active_dataset_datetime_boundaries[-1]:
             self.trade_logic.execute_trade_logic()
             self.process_placed_trades()
             self.process_active_trades()
             self.step_forward()
             if self.datetime >= previous + display_delta:
-                num_trades = self.display_backtest_progress(
-                    start_time=start_time, num_trades=num_trades
-                )
+                self.display_backtest_progress(start_time=start_time)
                 previous = self.datetime
                 start_time = time.time()
         print(f"BACKTESTING COMPLETE FOR DATASET: {dataset}")
 
-    def display_backtest_progress(self, start_time, num_trades):
+    def display_backtest_progress(self, start_time):
         stop_time = time.time()
-        num_trades = (
-            len(self.placed_trades)
-            + len(self.active_trades)
-            + len(self.completed_trades)
-            - num_trades
-        )
+        np = len(self.placed_trades)
+        na = len(self.active_trades)
+        nc = len(self.completed_trades)
         print(
             f"Backtested up to {self.datetime} / {self.active_dataset_datetime_boundaries[-1]}"
-            f"    {num_trades} new trades placed    ({stop_time - start_time:.2f} [s])"
+            f"    placed:{np + na + nc}  active:{na}  completed:{nc}    ({stop_time - start_time:.2f} [s])"
         )
-        return num_trades
 
     def get_datasets(self):
         a = self.start_datetime
@@ -193,7 +186,7 @@ class BacktestAgent:
         self.datetime += self.timestep
 
     def process_placed_trades(self):
-        bar = self._data[self.periods[0]].iloc[-1]
+        bar = self.data(self.periods[0]).iloc[-1]
         pop_nums = []
         for i, trade in enumerate(self.placed_trades):
             if bar["datetime"] >= trade.trade_timeout:
@@ -210,12 +203,12 @@ class BacktestAgent:
         self.active_trades = self.active_trades + active
 
     def process_active_trades(self):
-        bar = self._data[self.periods[0]].iloc[-1]
+        bar = self.data(self.periods[0]).iloc[-1]
         for trade in self.active_trades:
             if trade.status == "active":
                 trade.update(bar)
 
-        active = [t for t in self.placed_trades if t.status == "active"]
-        completed = [t for t in self.placed_trades if t.status == "completed"]
+        active = [t for t in self.active_trades if t.status == "active"]
+        completed = [t for t in self.active_trades if t.status == "completed"]
         self.active_trades = active
         self.completed_trades = self.completed_trades + completed
