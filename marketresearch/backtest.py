@@ -174,12 +174,12 @@ class BacktestAgent:
 
     def display_backtest_progress(self, start_time):
         stop_time = time.time()
-        np = len(self.placed_trades)
+        nplaced = len(self.placed_trades)
         na = len(self.active_trades)
         nc = len(self.completed_trades)
         print(
             f"Backtested up to {self.datetime} / {self.active_dataset_datetime_boundaries[-1]}"
-            f"    placed:{np + na + nc}  active:{na}  completed:{nc}    ({stop_time - start_time:.2f} [s])"
+            f"    placed:{nplaced + na + nc}  active:{na}  completed:{nc}    ({stop_time - start_time:.2f} [s])"
         )
 
     def get_datasets(self):
