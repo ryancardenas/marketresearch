@@ -9,10 +9,62 @@ Code for backtesting strategies using data in fx_data.hdf5.
 """
 from __future__ import annotations
 
+from pathlib import Path
 import time
 
+import h5py
 import numpy as np
 import pandas as pd
+
+
+def prepare_data(
+    fn: Path, symbol: str, sorted_periods: list[str], indicators: list[dict]
+):
+    with h5py.File(fn, "r") as f:
+        symbol_grp = f[symbol]
+        data = {}
+        for period in sorted_periods:
+            tf = {}
+            if period in ["M10", "M15", "M30", "M45"]:
+                num_min = period[1:]
+                for dset in symbol_grp["M5"].keys():
+                    tf[dset] = symbol_grp["M5"][dset][:]
+                tf = pd.DataFrame(tf)
+                tf["datetime"] = tf["timestamp"].astype("datetime64[ns]")
+                tf = (
+                    tf.resample(f"{num_min}min", on="datetime")
+                    .agg(
+                        {
+                            "open": "first",
+                            "high": "max",
+                            "low": "min",
+                            "close": "last",
+                            "tickvol": "sum",
+                        }
+                    )
+                    .reset_index()
+                )
+                tf = tf[tf["close"].notna()].reset_index(drop=True)
+            else:
+                for dset in symbol_grp[period].keys():
+                    tf[dset] = symbol_grp[period][dset][:]
+                tf = pd.DataFrame(tf)
+                tf["datetime"] = tf["timestamp"].astype("datetime64[ns]")
+
+            for indicator in indicators:
+                ind = indicator["func"](df=tf, **indicator["args"])
+                if isinstance(ind, np.ndarray) or isinstance(ind, pd.Series):
+                    tf[indicator["name"]] = ind
+                elif isinstance(ind, pd.DataFrame):
+                    for col in ind.columns:
+                        if col == "val":
+                            name = indicator["name"]
+                        else:
+                            name = indicator["name"] + "_" + col
+                        tf[name] = ind[col].values
+
+            data[period] = tf
+    return data
 
 
 class BacktestTrade:
