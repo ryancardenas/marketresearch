@@ -49,8 +49,8 @@ class BacktestTrade:
 
     def update(self, data: pd.Series):
         assert (
-            data["datetime"] > self.time_placed
-        ), "update(timestamp) must be called after the time this trade was placed"
+            data["datetime"] >= self.time_placed
+        ), "update(timestamp) must be called at or after the time this trade was placed"
         if self.status == "placed":
             if self.entry > self.stop:
                 if data["high"] >= self.entry:
@@ -143,6 +143,7 @@ class BacktestAgent:
         self.datetime = self.active_dataset[0]
         previous = self.datetime
         start_time = time.time()
+        num_trades = 0
         while self.datetime < self.active_dataset[-1]:
             self.trade_logic.execute_trade_logic()
             self.process_placed_trades()
@@ -150,9 +151,15 @@ class BacktestAgent:
             self.step_forward()
             if self.datetime >= previous + display_delta:
                 stop_time = time.time()
+                num_trades = (
+                    len(self.placed_trades)
+                    + len(self.active_trades)
+                    + len(self.completed_trades)
+                    - num_trades
+                )
                 print(
                     f"Backtested up to {self.datetime} / {self.active_dataset[-1]}"
-                    f"    ({stop_time-start_time:.2f} [s])"
+                    f"    {num_trades} new trades placed    ({stop_time-start_time:.2f} [s])"
                 )
                 previous = self.datetime
                 start_time = time.time()
