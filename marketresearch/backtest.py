@@ -20,6 +20,13 @@ import pandas as pd
 def prepare_data(
     fn: Path, symbol: str, sorted_periods: list[str], indicators: list[dict]
 ):
+    agg_dict = {
+        "open": "first",
+        "high": "max",
+        "low": "min",
+        "close": "last",
+        "volume": "sum",
+    }
     with h5py.File(fn, "r") as f:
         symbol_grp = f[symbol]
         data = {}
@@ -33,15 +40,7 @@ def prepare_data(
                 tf["datetime"] = tf["timestamp"].astype("datetime64[ns]")
                 tf = (
                     tf.resample(f"{num_min}min", on="datetime")
-                    .agg(
-                        {
-                            "open": "first",
-                            "high": "max",
-                            "low": "min",
-                            "close": "last",
-                            "tickvol": "sum",
-                        }
-                    )
+                    .agg(agg_dict)
                     .reset_index()
                 )
                 tf = tf[tf["close"].notna()].reset_index(drop=True)
@@ -52,17 +51,7 @@ def prepare_data(
                 tf = pd.DataFrame(tf)
                 tf["datetime"] = tf["timestamp"].astype("datetime64[ns]")
                 tf = (
-                    tf.resample(f"{num_hr}h", on="datetime")
-                    .agg(
-                        {
-                            "open": "first",
-                            "high": "max",
-                            "low": "min",
-                            "close": "last",
-                            "tickvol": "sum",
-                        }
-                    )
-                    .reset_index()
+                    tf.resample(f"{num_hr}h", on="datetime").agg(agg_dict).reset_index()
                 )
                 tf = tf[tf["close"].notna()].reset_index(drop=True)
             else:
