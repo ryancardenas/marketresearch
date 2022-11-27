@@ -282,7 +282,18 @@ if __name__ == "__main__":
     pytest_retries = 3
     rtdir = PROJECT_ROOT_DIRECTORY / "marketresearch\\databases\\"
     trg = rtdir / "mt5_fx_data.hdf5"
-    symbols = ['AUDUSD', 'EURCHF', 'EURGBP', 'EURJPY', 'EURUSD', 'GBPJPY', 'GBPUSD', 'USDCAD', 'USDCHF', 'USDJPY']
+    symbols = [
+        "AUDUSD",
+        "EURCHF",
+        "EURGBP",
+        "EURJPY",
+        "EURUSD",
+        "GBPJPY",
+        "GBPUSD",
+        "USDCAD",
+        "USDCHF",
+        "USDJPY",
+    ]
 
     with open("fx_data_mining.log", "a") as f:
         now = pd.datetime.today().strftime("%Y-%m-%d %H:%M:%S")
