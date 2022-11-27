@@ -281,7 +281,7 @@ if __name__ == "__main__":
     tries = 0
     pytest_retries = 3
     rtdir = PROJECT_ROOT_DIRECTORY / "marketresearch\\databases\\"
-    trg = rtdir / "fx_data.hdf5"
+    trg = rtdir / "mt5_fx_data.hdf5"
     symbols = ["EURUSD", "USDJPY", "USDCAD", "GBPUSD", "NZDUSD", "AUDUSD", "USDCHF"]
 
     with open("fx_data_mining.log", "a") as f:
